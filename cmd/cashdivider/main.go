@@ -1,4 +1,4 @@
-package cashdivider
+package main
 
 import "fmt"
 
