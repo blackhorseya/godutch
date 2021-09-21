@@ -1,0 +1,39 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v2
+      - name: Checkout with submodules
+        run: |
+          sed -i 's/git@github.com:/https:\/\/'"${{ secrets.USERNAME }}"':'"${{ secrets.TOKEN }}"'@github.com\//' .gitmodules
+          git submodule update --init --recursive
+      - name: Prepare
+        run: |
+          echo "VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+          curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
+          curl -LO "https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl" && chmod +x kubectl && sudo mv kubectl /usr/local/bin/
+      - name: Login to gcr.io
+        uses: docker/login-action@v1
+        with:
+          registry: gcr.io
+          username: _json_key
+          password: ${{ secrets.GCR_JSON_KEY }}
+      - name: Build and push image
+        run: |
+          make build-image VERSION=$VERSION
+          make tag-image VERSION=$VERSION
+          make push-image VERSION=$VERSION
+      - name: Deploy
+        env:
+          KUBECONFIG_FILE: ${{ secrets.KUBECONFIG }}
+        run: |
+          echo $KUBECONFIG_FILE | base64 --decode > ./kubeconfig.yaml && export KUBECONFIG=./kubeconfig.yaml
+          make deploy NS=side DEPLOY_TO=prod VERSION=$VERSION
