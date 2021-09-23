@@ -28,7 +28,18 @@ func (i *impl) GetByID(ctx contextx.Contextx, id, userID int64) (info *event.Act
 	defer cancel()
 
 	ret := event.Activity{}
-	stmt := `SELECT id, name, created_at FROM activities WHERE id = ?`
+	stmt := `
+SELECT 
+       act.id, 
+       act.name, 
+       act.owner_id,
+       owner.id "owner.id",
+       owner.email "owner.email", 
+       owner.name "owner.name",
+       act.created_at 
+FROM activities act
+JOIN users owner ON owner.id = act.owner_id
+WHERE act.id = ?`
 	err = i.rw.GetContext(timeout, &ret, stmt, id)
 	if err != nil {
 		if err == sql.ErrNoRows {

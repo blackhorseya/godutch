@@ -8,6 +8,7 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/blackhorseya/godutch/internal/pkg/base/contextx"
 	"github.com/blackhorseya/godutch/internal/pkg/entity/event"
+	"github.com/blackhorseya/godutch/internal/pkg/entity/user"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/suite"
@@ -19,10 +20,17 @@ var (
 
 	userID1 = int64(1)
 
+	user1 = &user.Profile{
+		ID:    userID1,
+		Email: "test",
+		Name:  "test",
+	}
+
 	act1 = &event.Activity{
 		ID:      id1,
 		OwnerID: userID1,
 		Name:    "test",
+		Owner:   user1,
 	}
 )
 
@@ -50,6 +58,8 @@ func TestRepoSuite(t *testing.T) {
 }
 
 func (s *repoSuite) Test_impl_GetByID() {
+	stmt := "SELECT act.id, act.name, act.owner_id, owner.id \"owner.id\", owner.email \"owner.email\", owner.name \"owner.name\", act.created_at FROM activities act JOIN users owner ON owner.id = act.owner_id"
+
 	type args struct {
 		id     int64
 		userID int64
@@ -64,7 +74,7 @@ func (s *repoSuite) Test_impl_GetByID() {
 		{
 			name: "get by id then error",
 			args: args{id: id1, userID: userID1, mock: func() {
-				s.mock.ExpectQuery("SELECT id, name, created_at FROM activities").
+				s.mock.ExpectQuery(stmt).
 					WithArgs(id1).
 					WillReturnError(errors.New("error"))
 			}},
@@ -74,7 +84,7 @@ func (s *repoSuite) Test_impl_GetByID() {
 		{
 			name: "get by id then not found",
 			args: args{id: id1, userID: userID1, mock: func() {
-				s.mock.ExpectQuery("SELECT id, name, created_at FROM activities").
+				s.mock.ExpectQuery(stmt).
 					WithArgs(id1).
 					WillReturnError(sql.ErrNoRows)
 			}},
@@ -84,10 +94,10 @@ func (s *repoSuite) Test_impl_GetByID() {
 		{
 			name: "get by id then success",
 			args: args{id: id1, userID: userID1, mock: func() {
-				s.mock.ExpectQuery("SELECT id, name, created_at FROM activities").
+				s.mock.ExpectQuery(stmt).
 					WithArgs(id1).
-					WillReturnRows(sqlmock.NewRows([]string{"id", "name", "created_at"}).
-						AddRow(act1.ID, act1.Name, act1.CreatedAt))
+					WillReturnRows(sqlmock.NewRows([]string{"id", "name", "owner_id", "owner.id", "owner.email", "owner.name", "created_at"}).
+						AddRow(act1.ID, act1.Name, act1.OwnerID, user1.ID, user1.Email, user1.Name, act1.CreatedAt))
 			}},
 			wantInfo: act1,
 			wantErr:  false,
@@ -112,6 +122,8 @@ func (s *repoSuite) Test_impl_GetByID() {
 }
 
 func (s *repoSuite) Test_impl_Create() {
+	stmt := "INSERT INTO activities"
+
 	type args struct {
 		created *event.Activity
 		mock    func()
@@ -125,7 +137,7 @@ func (s *repoSuite) Test_impl_Create() {
 		{
 			name: "create then error",
 			args: args{created: act1, mock: func() {
-				s.mock.ExpectExec("INSERT INTO activities").
+				s.mock.ExpectExec(stmt).
 					WithArgs(act1.ID, act1.Name, act1.OwnerID, act1.CreatedAt).
 					WillReturnError(errors.New("error"))
 			}},
@@ -135,7 +147,7 @@ func (s *repoSuite) Test_impl_Create() {
 		{
 			name: "create then success",
 			args: args{created: act1, mock: func() {
-				s.mock.ExpectExec("INSERT INTO activities").
+				s.mock.ExpectExec(stmt).
 					WithArgs(act1.ID, act1.Name, act1.OwnerID, act1.CreatedAt).
 					WillReturnResult(sqlmock.NewResult(1, 1))
 			}},
