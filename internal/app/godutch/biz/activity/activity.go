@@ -1,6 +1,7 @@
 package activity
 
 import (
+	"github.com/blackhorseya/godutch/internal/app/godutch/biz/activity/repo"
 	"github.com/blackhorseya/godutch/internal/pkg/base/contextx"
 	"github.com/blackhorseya/godutch/internal/pkg/entity/event"
 	"github.com/google/wire"
@@ -25,4 +26,4 @@ type IBiz interface {
 }
 
 // ProviderSet is a provider set for wire
-var ProviderSet = wire.NewSet()
+var ProviderSet = wire.NewSet(repo.ProviderSet)
