@@ -8,6 +8,10 @@ package main
 import (
 	"github.com/blackhorseya/godutch/internal/app/godutch"
 	"github.com/blackhorseya/godutch/internal/app/godutch/api"
+	health2 "github.com/blackhorseya/godutch/internal/app/godutch/api/health"
+	"github.com/blackhorseya/godutch/internal/app/godutch/biz"
+	"github.com/blackhorseya/godutch/internal/app/godutch/biz/health"
+	"github.com/blackhorseya/godutch/internal/app/godutch/biz/health/repo"
 	"github.com/blackhorseya/godutch/internal/pkg/app"
 	"github.com/blackhorseya/godutch/internal/pkg/entity/config"
 	"github.com/blackhorseya/godutch/internal/pkg/infra/databases"
@@ -42,7 +46,18 @@ func CreateApp(path2 string, nodeID int64) (*app.Application, error) {
 	if err != nil {
 		return nil, err
 	}
-	initHandlers := api.CreateInitHandlerFn()
+	databasesOptions, err := databases.NewOptions(viper, logger)
+	if err != nil {
+		return nil, err
+	}
+	db, err := databases.NewMariaDB(databasesOptions)
+	if err != nil {
+		return nil, err
+	}
+	iRepo := repo.NewImpl(db)
+	iBiz := health.NewImpl(logger, iRepo)
+	iHandler := health2.NewImpl(logger, iBiz)
+	initHandlers := api.CreateInitHandlerFn(iHandler)
 	engine := http.NewRouter(httpOptions, logger, initHandlers)
 	server, err := http.New(httpOptions, logger, engine)
 	if err != nil {
@@ -57,4 +72,4 @@ func CreateApp(path2 string, nodeID int64) (*app.Application, error) {
 
 // wire.go:
 
-var providerSet = wire.NewSet(godutch.ProviderSet, log.ProviderSet, idgen.ProviderSet, config.ProviderSet, http.ProviderSet, databases.ProviderSet, token.ProviderSet, api.ProviderSet)
+var providerSet = wire.NewSet(godutch.ProviderSet, log.ProviderSet, idgen.ProviderSet, config.ProviderSet, http.ProviderSet, databases.ProviderSet, token.ProviderSet, api.ProviderSet, biz.ProviderSet)

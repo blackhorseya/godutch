@@ -6,6 +6,7 @@ package main
 import (
 	"github.com/blackhorseya/godutch/internal/app/godutch"
 	"github.com/blackhorseya/godutch/internal/app/godutch/api"
+	"github.com/blackhorseya/godutch/internal/app/godutch/biz"
 	"github.com/blackhorseya/godutch/internal/pkg/app"
 	"github.com/blackhorseya/godutch/internal/pkg/entity/config"
 	"github.com/blackhorseya/godutch/internal/pkg/infra/databases"
@@ -25,6 +26,7 @@ var providerSet = wire.NewSet(
 	databases.ProviderSet,
 	token.ProviderSet,
 	api.ProviderSet,
+	biz.ProviderSet,
 )
 
 // CreateApp serve caller to create an injector
