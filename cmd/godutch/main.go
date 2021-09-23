@@ -1,6 +1,15 @@
 package main
 
-import "fmt"
+import (
+	"flag"
+	"math/rand"
+)
+
+var path = flag.String("c", "configs/app.yaml", "set config file path")
+
+func init() {
+	flag.Parse()
+}
 
 // @title Godutch API
 // @version 0.0.1
@@ -19,5 +28,14 @@ import "fmt"
 // @in header
 // @name Authorization
 func main() {
-	fmt.Println("Hello world")
+	app, err := CreateApp(*path, rand.Int63n(100))
+	if err != nil {
+		panic(err)
+	}
+
+	if err = app.Start(); err != nil {
+		panic(err)
+	}
+
+	app.AwaitSignal()
 }
