@@ -1,4 +1,4 @@
-module github.com/blackhorseya/cashdivider
+module github.com/blackhorseya/godutch
 
 go 1.17
 

@@ -1,10 +1,10 @@
-APP_NAME = cashdivider
+APP_NAME = godutch
 VERSION = latest
 PROJECT_ID = sean-side
 NS = side
 DEPLOY_TO = uat
 
-DB_URI = "mysql://cashdivider:changeme@tcp(localhost:3306)/cashdivider?charset=utf8mb4&parseTime=True&loc=Local"
+DB_URI = "mysql://godutch:changeme@tcp(localhost:3306)/godutch?charset=utf8mb4&parseTime=True&loc=Local"
 
 .PHONY: help # Generate list of targets with descriptions
 help:
@@ -20,7 +20,7 @@ lint:
 
 .PHONY: report # refresh goreportcard
 report:
-	@curl -XPOST 'https://goreportcard.com/checks' --data 'repo=github.com/blackhorseya/cashdivider'
+	@curl -XPOST 'https://goreportcard.com/checks' --data 'repo=github.com/blackhorseya/godutch'
 
 .PHONY: test-unit # execute unit test
 test-unit:
