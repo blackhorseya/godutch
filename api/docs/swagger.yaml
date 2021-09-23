@@ -1,0 +1,19 @@
+basePath: /api
+info:
+  contact:
+    email: blackhorseya@gmail.com
+    name: Sean Cheng
+    url: https://blog.seancheng.space
+  description: Godutch API
+  license:
+    name: GPL-3.0
+    url: https://spdx.org/licenses/GPL-3.0-only.html
+  title: Godutch API
+  version: 0.0.1
+paths: {}
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
