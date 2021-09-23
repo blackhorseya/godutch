@@ -1,6 +1,9 @@
 package repo
 
 import (
+	"database/sql"
+	"time"
+
 	"github.com/blackhorseya/godutch/internal/pkg/base/contextx"
 	"github.com/blackhorseya/godutch/internal/pkg/entity/event"
 	"github.com/jmoiron/sqlx"
@@ -21,8 +24,21 @@ func NewImpl(logger *zap.Logger, rw *sqlx.DB) IRepo {
 }
 
 func (i *impl) GetByID(ctx contextx.Contextx, id, userID int64) (info *event.Activity, err error) {
-	// todo: 2021-09-23|22:44|Sean|impl me
-	panic("implement me")
+	timeout, cancel := contextx.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	ret := event.Activity{}
+	stmt := `SELECT id, name, created_at FROM activities WHERE id = ?`
+	err = i.rw.GetContext(timeout, &ret, stmt, id)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+
+		return nil, err
+	}
+
+	return &ret, nil
 }
 
 func (i *impl) Create(ctx contextx.Contextx, created *event.Activity) (info *event.Activity, err error) {
