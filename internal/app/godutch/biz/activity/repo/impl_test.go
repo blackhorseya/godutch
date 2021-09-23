@@ -20,8 +20,9 @@ var (
 	userID1 = int64(1)
 
 	act1 = &event.Activity{
-		ID:   id1,
-		Name: "test",
+		ID:      id1,
+		OwnerID: userID1,
+		Name:    "test",
 	}
 )
 
@@ -105,6 +106,56 @@ func (s *repoSuite) Test_impl_GetByID() {
 			}
 			if !reflect.DeepEqual(gotInfo, tt.wantInfo) {
 				t.Errorf("GetByID() gotInfo = %v, want %v", gotInfo, tt.wantInfo)
+			}
+		})
+	}
+}
+
+func (s *repoSuite) Test_impl_Create() {
+	type args struct {
+		created *event.Activity
+		mock    func()
+	}
+	tests := []struct {
+		name     string
+		args     args
+		wantInfo *event.Activity
+		wantErr  bool
+	}{
+		{
+			name: "create then error",
+			args: args{created: act1, mock: func() {
+				s.mock.ExpectExec("INSERT INTO activities").
+					WithArgs(act1.ID, act1.Name, act1.OwnerID, act1.CreatedAt).
+					WillReturnError(errors.New("error"))
+			}},
+			wantInfo: nil,
+			wantErr:  true,
+		},
+		{
+			name: "create then success",
+			args: args{created: act1, mock: func() {
+				s.mock.ExpectExec("INSERT INTO activities").
+					WithArgs(act1.ID, act1.Name, act1.OwnerID, act1.CreatedAt).
+					WillReturnResult(sqlmock.NewResult(1, 1))
+			}},
+			wantInfo: act1,
+			wantErr:  false,
+		},
+	}
+	for _, tt := range tests {
+		s.T().Run(tt.name, func(t *testing.T) {
+			if tt.args.mock != nil {
+				tt.args.mock()
+			}
+
+			gotInfo, err := s.repo.Create(contextx.Background(), tt.args.created)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Create() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(gotInfo, tt.wantInfo) {
+				t.Errorf("Create() gotInfo = %v, want %v", gotInfo, tt.wantInfo)
 			}
 		})
 	}

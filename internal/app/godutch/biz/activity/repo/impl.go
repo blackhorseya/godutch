@@ -42,8 +42,16 @@ func (i *impl) GetByID(ctx contextx.Contextx, id, userID int64) (info *event.Act
 }
 
 func (i *impl) Create(ctx contextx.Contextx, created *event.Activity) (info *event.Activity, err error) {
-	// todo: 2021-09-23|22:44|Sean|impl me
-	panic("implement me")
+	timeout, cancel := contextx.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	stmt := `INSERT INTO activities (id, name, owner_id, created_at) VALUES (:id, :name, :owner_id, :created_at)`
+	_, err = i.rw.NamedExecContext(timeout, stmt, created)
+	if err != nil {
+		return nil, err
+	}
+
+	return created, nil
 }
 
 func (i *impl) List(ctx contextx.Contextx, id, userID int64, limit, offset int) (infos []*event.Activity, err error) {

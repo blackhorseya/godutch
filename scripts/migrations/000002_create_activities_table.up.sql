@@ -2,6 +2,7 @@ create table if not exists activities
 (
     id         bigint not null,
     name       text   not null,
+    owner_id   bigint not null,
     created_at bigint not null,
     constraint activities_pk
         primary key (id)
