@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/blackhorseya/godutch/internal/app/godutch/biz/health/repo/mocks"
+	"github.com/blackhorseya/godutch/internal/app/godutch/biz/user/repo/mocks"
 	"github.com/blackhorseya/godutch/internal/pkg/base/contextx"
 	"github.com/blackhorseya/godutch/internal/pkg/base/encrypt"
 	"github.com/blackhorseya/godutch/internal/pkg/entity/user"

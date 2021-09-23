@@ -9,9 +9,12 @@ import (
 	"github.com/blackhorseya/godutch/internal/app/godutch"
 	"github.com/blackhorseya/godutch/internal/app/godutch/api"
 	health2 "github.com/blackhorseya/godutch/internal/app/godutch/api/health"
+	user2 "github.com/blackhorseya/godutch/internal/app/godutch/api/user"
 	"github.com/blackhorseya/godutch/internal/app/godutch/biz"
 	"github.com/blackhorseya/godutch/internal/app/godutch/biz/health"
-	"github.com/blackhorseya/godutch/internal/app/godutch/biz/health/repo"
+	repo2 "github.com/blackhorseya/godutch/internal/app/godutch/biz/health/repo"
+	"github.com/blackhorseya/godutch/internal/app/godutch/biz/user"
+	"github.com/blackhorseya/godutch/internal/app/godutch/biz/user/repo"
 	"github.com/blackhorseya/godutch/internal/pkg/app"
 	"github.com/blackhorseya/godutch/internal/pkg/entity/config"
 	"github.com/blackhorseya/godutch/internal/pkg/infra/databases"
@@ -54,10 +57,25 @@ func CreateApp(path2 string, nodeID int64) (*app.Application, error) {
 	if err != nil {
 		return nil, err
 	}
-	iRepo := repo.NewImpl(db)
-	iBiz := health.NewImpl(logger, iRepo)
-	iHandler := health2.NewImpl(logger, iBiz)
-	initHandlers := api.CreateInitHandlerFn(iHandler)
+	iRepo := repo.NewImpl(logger, db)
+	node, err := idgen.New(nodeID)
+	if err != nil {
+		return nil, err
+	}
+	tokenOptions, err := token.NewOptions(viper)
+	if err != nil {
+		return nil, err
+	}
+	factory, err := token.New(tokenOptions, logger)
+	if err != nil {
+		return nil, err
+	}
+	iBiz := user.NewImpl(logger, iRepo, node, factory)
+	repoIRepo := repo2.NewImpl(db)
+	healthIBiz := health.NewImpl(logger, repoIRepo)
+	iHandler := health2.NewImpl(logger, healthIBiz)
+	userIHandler := user2.NewImpl(logger, iBiz)
+	initHandlers := api.CreateInitHandlerFn(iBiz, iHandler, userIHandler)
 	engine := http.NewRouter(httpOptions, logger, initHandlers)
 	server, err := http.New(httpOptions, logger, engine)
 	if err != nil {

@@ -4,7 +4,7 @@ PROJECT_ID = sean-side
 NS = side
 DEPLOY_TO = uat
 
-DB_URI = "mysql://godutch:changeme@tcp(localhost:3306)/godutch?charset=utf8mb4&parseTime=True&loc=Local"
+DB_URI = "mysql://godutch:changeme@tcp(localhost:3308)/godutch?charset=utf8mb4&parseTime=True&loc=Local"
 
 .PHONY: help # Generate list of targets with descriptions
 help:
