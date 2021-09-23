@@ -1,0 +1,15 @@
+app:
+  name: "godutch"
+  clientID: "7d01eb0200bc730a2c58"
+
+http:
+  port: 8080
+  mode: "debug"
+
+db:
+  debug: true
+  url: "godutch:changeme@tcp(localhost:3306)/godutch?charset=utf8mb4&parseTime=True&loc=Local"
+
+log:
+  format: text
+  level: debug
