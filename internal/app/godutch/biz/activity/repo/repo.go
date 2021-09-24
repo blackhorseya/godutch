@@ -14,6 +14,9 @@ type IRepo interface {
 	// Create an activity with name and members
 	Create(ctx contextx.Contextx, created *event.Activity) (info *event.Activity, err error)
 
+	// AddMembers serve caller to add members into activity
+	AddMembers(ctx contextx.Contextx, updated *event.Activity) (info *event.Activity, err error)
+
 	// List serve caller to list all activities
 	List(ctx contextx.Contextx, userID int64, limit, offset int) (infos []*event.Activity, err error)
 

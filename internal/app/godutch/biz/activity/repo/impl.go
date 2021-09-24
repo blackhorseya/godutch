@@ -65,6 +65,11 @@ func (i *impl) Create(ctx contextx.Contextx, created *event.Activity) (info *eve
 	return created, nil
 }
 
+func (i *impl) AddMembers(ctx contextx.Contextx, updated *event.Activity) (info *event.Activity, err error) {
+	// todo: 2021-09-25|00:30|Sean|impl me
+	panic("implement me")
+}
+
 func (i *impl) List(ctx contextx.Contextx, userID int64, limit, offset int) (infos []*event.Activity, err error) {
 	timeout, cancel := contextx.WithTimeout(ctx, 5*time.Second)
 	defer cancel()

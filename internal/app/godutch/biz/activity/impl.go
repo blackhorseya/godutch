@@ -14,8 +14,8 @@ import (
 
 type impl struct {
 	logger *zap.Logger
-	repo repo.IRepo
-	node *snowflake.Node
+	repo   repo.IRepo
+	node   *snowflake.Node
 }
 
 // NewImpl serve caller to create an IBiz
@@ -114,6 +114,11 @@ func (i *impl) NewWithMembers(ctx contextx.Contextx, name string, emails []strin
 	}
 
 	return ret, nil
+}
+
+func (i *impl) InviteMembers(ctx contextx.Contextx, id int64, emails []string) (info *event.Activity, err error) {
+	// todo: 2021-09-25|00:29|Sean|impl me
+	panic("implement me")
 }
 
 func (i *impl) ChangeName(ctx contextx.Contextx, id int64, name string) (info *event.Activity, err error) {

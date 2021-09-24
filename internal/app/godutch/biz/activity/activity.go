@@ -18,6 +18,9 @@ type IBiz interface {
 	// NewWithMembers serve caller to create an activity
 	NewWithMembers(ctx contextx.Contextx, name string, emails []string) (info *event.Activity, err error)
 
+	// InviteMembers serve caller to invite members
+	InviteMembers(ctx contextx.Contextx, id int64, emails []string) (info *event.Activity, err error)
+
 	// ChangeName serve caller to change activity's name
 	ChangeName(ctx contextx.Contextx, id int64, name string) (info *event.Activity, err error)
 
