@@ -14,16 +14,16 @@ import (
 
 type impl struct {
 	logger *zap.Logger
-	repo   repo.IRepo
-	idGen  *snowflake.Node
+	repo repo.IRepo
+	node *snowflake.Node
 }
 
 // NewImpl serve caller to create an IBiz
-func NewImpl(logger *zap.Logger, repo repo.IRepo, idGen *snowflake.Node) IBiz {
+func NewImpl(logger *zap.Logger, repo repo.IRepo, node *snowflake.Node) IBiz {
 	return &impl{
 		logger: logger.With(zap.String("type", "ActivityBiz")),
 		repo:   repo,
-		idGen:  idGen,
+		node:   node,
 	}
 }
 
@@ -101,7 +101,7 @@ func (i *impl) NewWithMembers(ctx contextx.Contextx, name string, emails []strin
 	}
 
 	created := &event.Activity{
-		ID:        i.idGen.Generate().Int64() / 1000 * 1000,
+		ID:        i.node.Generate().Int64() / 1000 * 1000,
 		Name:      name,
 		OwnerID:   profile.ID,
 		Owner:     profile,
