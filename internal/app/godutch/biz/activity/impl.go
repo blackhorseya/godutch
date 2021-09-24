@@ -54,17 +54,17 @@ func (i *impl) List(ctx contextx.Contextx, page, size int) (infos []*event.Activ
 		return nil, 0, er.ErrUserNotExists
 	}
 
-	if page < 0 {
+	if page <= 0 {
 		i.logger.Error(er.ErrInvalidPage.Error(), zap.Int("page", page))
 		return nil, 0, er.ErrInvalidPage
 	}
 
-	if size < 0 {
+	if size <= 0 {
 		i.logger.Error(er.ErrInvalidSize.Error(), zap.Int("size", size))
 		return nil, 0, er.ErrInvalidSize
 	}
 
-	ret, err := i.repo.List(ctx, profile.ID, size, page*size)
+	ret, err := i.repo.List(ctx, profile.ID, size, (page-1)*size)
 	if err != nil {
 		i.logger.Error(er.ErrListActivities.Error(), zap.Error(err), zap.Any("user", profile), zap.Int("page", page), zap.Int("size", size))
 		return nil, 0, er.ErrListActivities

@@ -156,14 +156,14 @@ func (s *bizSuite) Test_impl_List() {
 		},
 		{
 			name:      "invalid size then error",
-			args:      args{page: 0, size: -1, ctx: ctx1},
+			args:      args{page: 1, size: -1, ctx: ctx1},
 			wantInfos: nil,
 			wantTotal: 0,
 			wantErr:   true,
 		},
 		{
 			name: "list then error",
-			args: args{page: 0, size: 10, ctx: ctx1, mock: func() {
+			args: args{page: 1, size: 10, ctx: ctx1, mock: func() {
 				s.mock.On("List", mock.Anything, userID1, 10, 0).
 					Return(nil, errors.New("error")).Once()
 			}},
@@ -173,7 +173,7 @@ func (s *bizSuite) Test_impl_List() {
 		},
 		{
 			name: "list then not found",
-			args: args{page: 0, size: 10, ctx: ctx1, mock: func() {
+			args: args{page: 1, size: 10, ctx: ctx1, mock: func() {
 				s.mock.On("List", mock.Anything, userID1, 10, 0).
 					Return(nil, nil).Once()
 			}},
@@ -183,7 +183,7 @@ func (s *bizSuite) Test_impl_List() {
 		},
 		{
 			name: "count then error",
-			args: args{page: 0, size: 10, ctx: ctx1, mock: func() {
+			args: args{page: 1, size: 10, ctx: ctx1, mock: func() {
 				s.mock.On("List", mock.Anything, userID1, 10, 0).
 					Return([]*event.Activity{act1}, nil).Once()
 				s.mock.On("Count", mock.Anything, userID1).
@@ -195,7 +195,7 @@ func (s *bizSuite) Test_impl_List() {
 		},
 		{
 			name: "list and count then success",
-			args: args{page: 0, size: 10, ctx: ctx1, mock: func() {
+			args: args{page: 1, size: 10, ctx: ctx1, mock: func() {
 				s.mock.On("List", mock.Anything, userID1, 10, 0).
 					Return([]*event.Activity{act1}, nil).Once()
 				s.mock.On("Count", mock.Anything, userID1).
