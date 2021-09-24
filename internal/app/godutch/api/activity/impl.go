@@ -198,6 +198,21 @@ func (i *impl) ChangeName(c *gin.Context) {
 // @Failure 500 {object} er.APPError
 // @Router /v1/activities/{id} [delete]
 func (i *impl) Delete(c *gin.Context) {
-	// todo: 2021-09-25|01:03|Sean|impl me
-	panic("implement me")
+	ctx := c.MustGet("ctx").(contextx.Contextx)
+
+	var req reqID
+	if err := c.ShouldBindUri(&req); err != nil {
+		i.logger.Error(er.ErrInvalidID.Error(), zap.Error(err))
+		c.Error(er.ErrInvalidID)
+		return
+	}
+
+	err := i.biz.Delete(ctx, req.ID)
+	if err != nil {
+		i.logger.Error(er.ErrDeleteActivity.Error(), zap.Error(err), zap.Int64("id", req.ID))
+		c.Error(err)
+		return
+	}
+
+	c.Status(http.StatusNoContent)
 }

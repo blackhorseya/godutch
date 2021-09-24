@@ -275,3 +275,51 @@ func (s *handlerSuite) Test_impl_ChangeName() {
 		})
 	}
 }
+
+func (s *handlerSuite) Test_impl_Delete() {
+	s.r.DELETE("/api/v1/activities/:id", s.handler.Delete)
+
+	type args struct {
+		id   int64
+		mock func()
+	}
+	tests := []struct {
+		name     string
+		args     args
+		wantCode int
+	}{
+		{
+			name: "delete then 500",
+			args: args{id: id1, mock: func() {
+				s.mock.On("Delete", mock.Anything, id1).Return(er.ErrDeleteActivity).Once()
+			}},
+			wantCode: 500,
+		},
+		{
+			name: "delete then 204",
+			args: args{id: id1, mock: func() {
+				s.mock.On("Delete", mock.Anything, id1).Return(nil).Once()
+			}},
+			wantCode: 204,
+		},
+	}
+	for _, tt := range tests {
+		s.T().Run(tt.name, func(t *testing.T) {
+			if tt.args.mock != nil {
+				tt.args.mock()
+			}
+
+			uri := fmt.Sprintf("/api/v1/activities/%v", tt.args.id)
+			req := httptest.NewRequest(http.MethodDelete, uri, nil)
+			w := httptest.NewRecorder()
+			s.r.ServeHTTP(w, req)
+
+			got := w.Result()
+			defer got.Body.Close()
+
+			s.EqualValuesf(tt.wantCode, got.StatusCode, "Delete() code = %v, wantCode = %v", got.StatusCode, tt.wantCode)
+
+			s.TearDownTest()
+		})
+	}
+}
