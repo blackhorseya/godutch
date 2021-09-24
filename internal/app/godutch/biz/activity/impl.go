@@ -101,10 +101,15 @@ func (i *impl) NewWithMembers(ctx contextx.Contextx, name string, emails []strin
 	}
 
 	created := &event.Activity{
-		ID:        i.node.Generate().Int64() / 1000 * 1000,
-		Name:      name,
-		OwnerID:   profile.ID,
-		Owner:     profile,
+		ID:      i.node.Generate().Int64() / 1000 * 1000,
+		Name:    name,
+		OwnerID: profile.ID,
+		Owner: &user.Profile{
+			ID:        profile.ID,
+			Email:     profile.Email,
+			Name:      profile.Name,
+			CreatedAt: profile.CreatedAt,
+		},
 		CreatedAt: time.Now().Unix(),
 	}
 	ret, err := i.repo.Create(ctx, created)
