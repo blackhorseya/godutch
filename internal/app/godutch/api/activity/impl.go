@@ -159,8 +159,30 @@ type reqName struct {
 // @Failure 500 {object} er.APPError
 // @Router /v1/activities/{id}/name [patch]
 func (i *impl) ChangeName(c *gin.Context) {
-	// todo: 2021-09-25|01:03|Sean|impl me
-	panic("implement me")
+	ctx := c.MustGet("ctx").(contextx.Contextx)
+
+	var req reqID
+	if err := c.ShouldBindUri(&req); err != nil {
+		i.logger.Error(er.ErrInvalidID.Error(), zap.Error(err))
+		c.Error(er.ErrInvalidID)
+		return
+	}
+
+	var data *reqName
+	if err := c.ShouldBindJSON(&data); err != nil {
+		i.logger.Error(er.ErrEmptyName.Error(), zap.Error(err))
+		c.Error(er.ErrEmptyName)
+		return
+	}
+
+	ret, err := i.biz.ChangeName(ctx, req.ID, data.Name)
+	if err != nil {
+		i.logger.Error(er.ErrUpdateActivity.Error(), zap.Error(err), zap.Int64("id", req.ID), zap.Any("payload", data))
+		c.Error(err)
+		return
+	}
+
+	c.JSON(http.StatusOK, response.OK.WithData(ret))
 }
 
 // Delete

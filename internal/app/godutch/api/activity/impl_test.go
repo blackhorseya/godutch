@@ -220,3 +220,58 @@ func (s *handlerSuite) Test_impl_NewWithMembers() {
 		})
 	}
 }
+
+func (s *handlerSuite) Test_impl_ChangeName() {
+	s.r.PATCH("/api/v1/activities/:id/name", s.handler.ChangeName)
+
+	type args struct {
+		id   int64
+		name string
+		mock func()
+	}
+	tests := []struct {
+		name     string
+		args     args
+		wantCode int
+	}{
+		{
+			name:     "missing name then 400",
+			args:     args{id: id1, name: ""},
+			wantCode: 400,
+		},
+		{
+			name: "change name then 500",
+			args: args{id: id1, name: "test", mock: func() {
+				s.mock.On("ChangeName", mock.Anything, id1, "test").Return(nil, er.ErrUpdateActivity).Once()
+			}},
+			wantCode: 500,
+		},
+		{
+			name: "change name then 200",
+			args: args{id: id1, name: "test", mock: func() {
+				s.mock.On("ChangeName", mock.Anything, id1, "test").Return(act1, nil).Once()
+			}},
+			wantCode: 200,
+		},
+	}
+	for _, tt := range tests {
+		s.T().Run(tt.name, func(t *testing.T) {
+			if tt.args.mock != nil {
+				tt.args.mock()
+			}
+
+			uri := fmt.Sprintf("/api/v1/activities/%v/name", tt.args.id)
+			data, _ := json.Marshal(&reqName{Name: tt.args.name})
+			req := httptest.NewRequest(http.MethodPatch, uri, bytes.NewBuffer(data))
+			w := httptest.NewRecorder()
+			s.r.ServeHTTP(w, req)
+
+			got := w.Result()
+			defer got.Body.Close()
+
+			s.EqualValuesf(tt.wantCode, got.StatusCode, "ChangeName() code = %v, wantCode = %v", got.StatusCode, tt.wantCode)
+
+			s.TearDownTest()
+		})
+	}
+}
