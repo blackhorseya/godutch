@@ -15,7 +15,7 @@ type IRepo interface {
 	Create(ctx contextx.Contextx, created *event.Activity) (info *event.Activity, err error)
 
 	// List serve caller to list all activities
-	List(ctx contextx.Contextx, id, userID int64, limit, offset int) (infos []*event.Activity, err error)
+	List(ctx contextx.Contextx, userID int64, limit, offset int) (infos []*event.Activity, err error)
 
 	// Count serve caller to count all activities
 	Count(ctx contextx.Contextx, userID int64) (total int, err error)

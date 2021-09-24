@@ -32,6 +32,11 @@ var (
 		Name:    "test",
 		Owner:   user1,
 	}
+
+	act2 = &event.Activity{
+		ID:   id1,
+		Name: "test",
+	}
 )
 
 type repoSuite struct {
@@ -168,6 +173,71 @@ func (s *repoSuite) Test_impl_Create() {
 			}
 			if !reflect.DeepEqual(gotInfo, tt.wantInfo) {
 				t.Errorf("Create() gotInfo = %v, want %v", gotInfo, tt.wantInfo)
+			}
+		})
+	}
+}
+
+func (s *repoSuite) Test_impl_List() {
+	stmt := "SELECT id, name, created_at FROM activities"
+
+	type args struct {
+		userID int64
+		limit  int
+		offset int
+		mock   func()
+	}
+	tests := []struct {
+		name      string
+		args      args
+		wantInfos []*event.Activity
+		wantErr   bool
+	}{
+		{
+			name: "list then error",
+			args: args{userID: userID1, limit: 5, offset: 0, mock: func() {
+				s.mock.ExpectQuery(stmt).
+					WithArgs(userID1, 5, 0).
+					WillReturnError(errors.New("error"))
+			}},
+			wantInfos: nil,
+			wantErr:   true,
+		},
+		{
+			name: "list then not found",
+			args: args{userID: userID1, limit: 5, offset: 0, mock: func() {
+				s.mock.ExpectQuery(stmt).
+					WithArgs(userID1, 5, 0).
+					WillReturnError(sql.ErrNoRows)
+			}},
+			wantInfos: nil,
+			wantErr:   false,
+		},
+		{
+			name: "list then success",
+			args: args{userID: userID1, limit: 5, offset: 0, mock: func() {
+				s.mock.ExpectQuery(stmt).
+					WithArgs(userID1, 5, 0).
+					WillReturnRows(sqlmock.NewRows([]string{"id", "name", "created_at"}).
+						AddRow(act2.ID, act2.Name, act2.CreatedAt))
+			}},
+			wantInfos: []*event.Activity{act2},
+			wantErr:   false,
+		},
+	}
+	for _, tt := range tests {
+		s.T().Run(tt.name, func(t *testing.T) {
+			if tt.args.mock != nil {
+				tt.args.mock()
+			}
+
+			gotInfos, err := s.repo.List(contextx.Background(), tt.args.userID, tt.args.limit, tt.args.offset)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("List() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(gotInfos, tt.wantInfos) {
+				t.Errorf("List() gotInfos = %v, want %v", gotInfos, tt.wantInfos)
 			}
 		})
 	}

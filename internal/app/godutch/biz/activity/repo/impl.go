@@ -65,9 +65,22 @@ func (i *impl) Create(ctx contextx.Contextx, created *event.Activity) (info *eve
 	return created, nil
 }
 
-func (i *impl) List(ctx contextx.Contextx, id, userID int64, limit, offset int) (infos []*event.Activity, err error) {
-	// todo: 2021-09-23|22:44|Sean|impl me
-	panic("implement me")
+func (i *impl) List(ctx contextx.Contextx, userID int64, limit, offset int) (infos []*event.Activity, err error) {
+	timeout, cancel := contextx.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	var ret []*event.Activity
+	stmt := `SELECT id, name, created_at FROM activities WHERE owner_id = ? limit ? offset ?`
+	err = i.rw.SelectContext(timeout, &ret, stmt, userID, limit, offset)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+
+		return nil, err
+	}
+
+	return ret, nil
 }
 
 func (i *impl) Count(ctx contextx.Contextx, userID int64) (total int, err error) {
