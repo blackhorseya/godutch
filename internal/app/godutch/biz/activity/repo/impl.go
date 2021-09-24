@@ -75,7 +75,18 @@ func (i *impl) List(ctx contextx.Contextx, userID int64, limit, offset int) (inf
 	defer cancel()
 
 	var ret []*event.Activity
-	stmt := `SELECT id, name, created_at FROM activities WHERE owner_id = ? limit ? offset ?`
+	stmt := `
+SELECT 
+       act.id AS id, 
+       act.name AS name, 
+       act.created_at AS created_at, 
+       owner.id "owner.id",
+       owner.email "owner.email", 
+       owner.name "owner.name", 
+       owner.created_at "owner.created_at" 
+FROM activities act 
+JOIN users owner ON owner.id = act.owner_id 
+WHERE owner_id = ? limit ? offset ?`
 	err = i.rw.SelectContext(timeout, &ret, stmt, userID, limit, offset)
 	if err != nil {
 		if err == sql.ErrNoRows {

@@ -180,7 +180,17 @@ func (s *repoSuite) Test_impl_Create() {
 }
 
 func (s *repoSuite) Test_impl_List() {
-	stmt := "SELECT id, name, created_at FROM activities"
+	stmt := `
+SELECT 
+       act.id AS id, 
+       act.name AS name, 
+       act.created_at AS created_at, 
+       owner.id "owner.id",
+       owner.email "owner.email", 
+       owner.name "owner.name", 
+       owner.created_at "owner.created_at" 
+FROM activities act 
+JOIN users owner ON owner.id = act.owner_id`
 
 	type args struct {
 		userID int64
