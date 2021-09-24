@@ -99,8 +99,16 @@ func (i *impl) Count(ctx contextx.Contextx, userID int64) (total int, err error)
 }
 
 func (i *impl) Update(ctx contextx.Contextx, updated *event.Activity) (info *event.Activity, err error) {
-	// todo: 2021-09-23|22:44|Sean|impl me
-	panic("implement me")
+	timeout, cancel := contextx.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	stmt := `UPDATE activities set name=:name WHERE id = :id`
+	_, err = i.rw.NamedExecContext(timeout, stmt, updated)
+	if err != nil {
+		return nil, err
+	}
+
+	return updated, nil
 }
 
 func (i *impl) Delete(ctx contextx.Contextx, id, userID int64) error {

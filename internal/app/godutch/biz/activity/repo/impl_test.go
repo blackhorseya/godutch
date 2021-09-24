@@ -296,3 +296,51 @@ func (s *repoSuite) Test_impl_Count() {
 		})
 	}
 }
+
+func (s *repoSuite) Test_impl_Update() {
+	stmt := "UPDATE activities"
+
+	type args struct {
+		updated *event.Activity
+		mock    func()
+	}
+	tests := []struct {
+		name     string
+		args     args
+		wantInfo *event.Activity
+		wantErr  bool
+	}{
+		{
+			name: "update then error",
+			args: args{updated: act1, mock: func() {
+				s.mock.ExpectExec(stmt).WithArgs(act1.Name, act1.ID).WillReturnError(errors.New("error"))
+			}},
+			wantInfo: nil,
+			wantErr:  true,
+		},
+		{
+			name: "update then success",
+			args: args{updated: act1, mock: func() {
+				s.mock.ExpectExec(stmt).WithArgs(act1.Name, act1.ID).WillReturnResult(sqlmock.NewResult(1, 1))
+			}},
+			wantInfo: act1,
+			wantErr:  false,
+		},
+	}
+	for _, tt := range tests {
+		s.T().Run(tt.name, func(t *testing.T) {
+			if tt.args.mock != nil {
+				tt.args.mock()
+			}
+
+			gotInfo, err := s.repo.Update(contextx.Background(), tt.args.updated)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Update() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(gotInfo, tt.wantInfo) {
+				t.Errorf("Update() gotInfo = %v, want %v", gotInfo, tt.wantInfo)
+			}
+		})
+	}
+}
