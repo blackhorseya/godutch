@@ -3,6 +3,7 @@ package repo
 import (
 	"database/sql"
 	"reflect"
+	"regexp"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -238,6 +239,59 @@ func (s *repoSuite) Test_impl_List() {
 			}
 			if !reflect.DeepEqual(gotInfos, tt.wantInfos) {
 				t.Errorf("List() gotInfos = %v, want %v", gotInfos, tt.wantInfos)
+			}
+		})
+	}
+}
+
+func (s *repoSuite) Test_impl_Count() {
+	stmt := `SELECT COUNT(id) "c" FROM activities`
+
+	type args struct {
+		userID int64
+		mock   func()
+	}
+	tests := []struct {
+		name      string
+		args      args
+		wantTotal int
+		wantErr   bool
+	}{
+		{
+			name: "count then error",
+			args: args{userID: userID1, mock: func() {
+				s.mock.ExpectQuery(regexp.QuoteMeta(stmt)).
+					WithArgs(userID1).
+					WillReturnError(errors.New("error"))
+			}},
+			wantTotal: 0,
+			wantErr:   true,
+		},
+		{
+			name: "count then success",
+			args: args{userID: userID1, mock: func() {
+				s.mock.ExpectQuery(regexp.QuoteMeta(stmt)).
+					WithArgs(userID1).
+					WillReturnRows(sqlmock.NewRows([]string{"c"}).
+						AddRow(10))
+			}},
+			wantTotal: 10,
+			wantErr:   false,
+		},
+	}
+	for _, tt := range tests {
+		s.T().Run(tt.name, func(t *testing.T) {
+			if tt.args.mock != nil {
+				tt.args.mock()
+			}
+
+			gotTotal, err := s.repo.Count(contextx.Background(), tt.args.userID)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Count() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if gotTotal != tt.wantTotal {
+				t.Errorf("Count() gotTotal = %v, want %v", gotTotal, tt.wantTotal)
 			}
 		})
 	}

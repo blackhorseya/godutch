@@ -84,8 +84,18 @@ func (i *impl) List(ctx contextx.Contextx, userID int64, limit, offset int) (inf
 }
 
 func (i *impl) Count(ctx contextx.Contextx, userID int64) (total int, err error) {
-	// todo: 2021-09-23|22:44|Sean|impl me
-	panic("implement me")
+	timeout, cancel := contextx.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	var ret int
+	stmt := `SELECT COUNT(id) "c" FROM activities WHERE owner_id = ?`
+	row := i.rw.QueryRowxContext(timeout, stmt, userID)
+	err = row.Scan(&ret)
+	if err != nil {
+		return 0, err
+	}
+
+	return ret, nil
 }
 
 func (i *impl) Update(ctx contextx.Contextx, updated *event.Activity) (info *event.Activity, err error) {
