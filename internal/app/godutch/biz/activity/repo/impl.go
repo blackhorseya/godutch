@@ -62,6 +62,12 @@ func (i *impl) Create(ctx contextx.Contextx, created *event.Activity) (info *eve
 		return nil, err
 	}
 
+	stmt = `INSERT INTO activities_users_map (activity_id, user_id) VALUES (?, ?)`
+	_, err = i.rw.ExecContext(timeout, stmt, created.ID, created.Owner.ID)
+	if err != nil {
+		return nil, err
+	}
+
 	return created, nil
 }
 
