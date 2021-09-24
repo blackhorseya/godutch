@@ -16,7 +16,7 @@ type IBiz interface {
 	List(ctx contextx.Contextx, page, size int) (infos []*event.Activity, total int, err error)
 
 	// NewWithMembers serve caller to create an activity
-	NewWithMembers(ctx contextx.Contextx, name string, email []string) (info *event.Activity, err error)
+	NewWithMembers(ctx contextx.Contextx, name string, emails []string) (info *event.Activity, err error)
 
 	// ChangeName serve caller to change activity's name
 	ChangeName(ctx contextx.Contextx, id int64, name string) (info *event.Activity, err error)

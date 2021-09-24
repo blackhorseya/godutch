@@ -354,3 +354,71 @@ func (s *bizSuite) Test_impl_Delete() {
 		})
 	}
 }
+
+func (s *bizSuite) Test_impl_NewWithMembers() {
+	type args struct {
+		ctx   contextx.Contextx
+		name  string
+		email []string
+		mock  func()
+	}
+	tests := []struct {
+		name     string
+		args     args
+		wantInfo *event.Activity
+		wantErr  bool
+	}{
+		{
+			name:     "missing user info in ctx then error",
+			args:     args{name: "test", email: []string{"test"}, ctx: contextx.Background()},
+			wantInfo: nil,
+			wantErr:  true,
+		},
+		{
+			name:     "missing emails then error",
+			args:     args{name: "test", email: []string{}, ctx: ctx1},
+			wantInfo: nil,
+			wantErr:  true,
+		},
+		{
+			name:     "missing name then error",
+			args:     args{name: "", email: []string{"test"}, ctx: ctx1},
+			wantInfo: nil,
+			wantErr:  true,
+		},
+		{
+			name: "new an act then error",
+			args: args{name: "test", email: []string{"test"}, ctx: ctx1, mock: func() {
+				s.mock.On("Create", mock.Anything, mock.Anything).Return(nil, errors.New("error")).Once()
+			}},
+			wantInfo: nil,
+			wantErr:  true,
+		},
+		{
+			name: "new an act then success",
+			args: args{name: "test", email: []string{"test"}, ctx: ctx1, mock: func() {
+				s.mock.On("Create", mock.Anything, mock.Anything).Return(act1, nil).Once()
+			}},
+			wantInfo: act1,
+			wantErr:  false,
+		},
+	}
+	for _, tt := range tests {
+		s.T().Run(tt.name, func(t *testing.T) {
+			if tt.args.mock != nil {
+				tt.args.mock()
+			}
+
+			gotInfo, err := s.biz.NewWithMembers(tt.args.ctx, tt.args.name, tt.args.email)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("NewWithMembers() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(gotInfo, tt.wantInfo) {
+				t.Errorf("NewWithMembers() gotInfo = %v, want %v", gotInfo, tt.wantInfo)
+			}
+
+			s.TearDownTest()
+		})
+	}
+}

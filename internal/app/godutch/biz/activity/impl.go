@@ -1,6 +1,8 @@
 package activity
 
 import (
+	"time"
+
 	"github.com/blackhorseya/godutch/internal/app/godutch/biz/activity/repo"
 	"github.com/blackhorseya/godutch/internal/pkg/base/contextx"
 	"github.com/blackhorseya/godutch/internal/pkg/entity/er"
@@ -81,9 +83,37 @@ func (i *impl) List(ctx contextx.Contextx, page, size int) (infos []*event.Activ
 	return ret, total, nil
 }
 
-func (i *impl) NewWithMembers(ctx contextx.Contextx, name string, email []string) (info *event.Activity, err error) {
-	// todo: 2021-09-24|11:48|Sean|impl me
-	panic("implement me")
+func (i *impl) NewWithMembers(ctx contextx.Contextx, name string, emails []string) (info *event.Activity, err error) {
+	profile, ok := ctx.Value("user").(*user.Profile)
+	if !ok {
+		i.logger.Error(er.ErrUserNotExists.Error())
+		return nil, er.ErrUserNotExists
+	}
+
+	if len(emails) == 0 {
+		i.logger.Error(er.ErrEmptyEmail.Error())
+		return nil, er.ErrEmptyEmail
+	}
+
+	if len(name) == 0 {
+		i.logger.Error(er.ErrEmptyName.Error())
+		return nil, er.ErrEmptyName
+	}
+
+	created := &event.Activity{
+		ID:        i.idGen.Generate().Int64() / 1000 * 1000,
+		Name:      name,
+		OwnerID:   profile.ID,
+		Owner:     profile,
+		CreatedAt: time.Now().Unix(),
+	}
+	ret, err := i.repo.Create(ctx, created)
+	if err != nil {
+		i.logger.Error(er.ErrCreateActivity.Error(), zap.Error(err), zap.Any("user", profile), zap.String("name", name), zap.Strings("emails", emails))
+		return nil, er.ErrCreateActivity
+	}
+
+	return ret, nil
 }
 
 func (i *impl) ChangeName(ctx contextx.Contextx, id int64, name string) (info *event.Activity, err error) {
