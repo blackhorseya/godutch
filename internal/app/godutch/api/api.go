@@ -48,7 +48,7 @@ func CreateInitHandlerFn(userBiz userB.IBiz,
 					actG.GET(":id", actH.GetByID)
 					actG.GET("", actH.List)
 					actG.POST("", actH.NewWithMembers)
-					actG.PATCH(":id", actH.ChangeName)
+					actG.PATCH(":id/name", actH.ChangeName)
 					actG.DELETE(":id", actH.Delete)
 				}
 			}

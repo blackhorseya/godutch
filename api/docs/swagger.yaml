@@ -1,11 +1,44 @@
 basePath: /api
 definitions:
+  activity.reqName:
+    properties:
+      name:
+        type: string
+    required:
+    - name
+    type: object
+  activity.reqNew:
+    properties:
+      emails:
+        items:
+          type: string
+        type: array
+      name:
+        type: string
+    required:
+    - name
+    type: object
   er.APPError:
     properties:
       code:
         type: integer
       msg:
         type: string
+    type: object
+  event.Activity:
+    properties:
+      created_at:
+        type: integer
+      id:
+        type: integer
+      members:
+        items:
+          $ref: '#/definitions/user.Profile'
+        type: array
+      name:
+        type: string
+      owner:
+        $ref: '#/definitions/user.Profile'
     type: object
   response.Response:
     properties:
@@ -79,6 +112,201 @@ paths:
       summary: Readiness
       tags:
       - Health
+  /v1/activities:
+    get:
+      consumes:
+      - application/json
+      description: List all activities
+      parameters:
+      - default: 1
+        description: page
+        in: query
+        name: page
+        type: integer
+      - default: 5
+        description: size of page
+        in: query
+        name: size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/event.Activity'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/er.APPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/er.APPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/er.APPError'
+      security:
+      - ApiKeyAuth: []
+      summary: List all activities
+      tags:
+      - Activities
+    post:
+      consumes:
+      - application/json
+      description: Create an activity with members email
+      parameters:
+      - description: created activity
+        in: body
+        name: created
+        required: true
+        schema:
+          $ref: '#/definitions/activity.reqNew'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/event.Activity'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/er.APPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/er.APPError'
+      security:
+      - ApiKeyAuth: []
+      summary: Create an activity with members email
+      tags:
+      - Activities
+  /v1/activities/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Remove an activity by id
+      parameters:
+      - description: ID of activity
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/er.APPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/er.APPError'
+      security:
+      - ApiKeyAuth: []
+      summary: Remove an activity by id
+      tags:
+      - Activities
+    get:
+      consumes:
+      - application/json
+      description: Get an activity by id
+      parameters:
+      - description: ID of activity
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/event.Activity'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/er.APPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/er.APPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/er.APPError'
+      security:
+      - ApiKeyAuth: []
+      summary: Get an activity by id
+      tags:
+      - Activities
+  /v1/activities/{id}/name:
+    patch:
+      consumes:
+      - application/json
+      description: Update an activity of name by id
+      parameters:
+      - description: ID of activity
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: updated activity
+        in: body
+        name: updated
+        required: true
+        schema:
+          $ref: '#/definitions/activity.reqName'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/event.Activity'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/er.APPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/er.APPError'
+      security:
+      - ApiKeyAuth: []
+      summary: Update an activity of name by id
+      tags:
+      - Activities
   /v1/auth/login:
     post:
       consumes:
