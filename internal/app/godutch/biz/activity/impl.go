@@ -87,8 +87,35 @@ func (i *impl) NewWithMembers(ctx contextx.Contextx, name string, email []string
 }
 
 func (i *impl) ChangeName(ctx contextx.Contextx, id int64, name string) (info *event.Activity, err error) {
-	// todo: 2021-09-24|11:48|Sean|impl me
-	panic("implement me")
+	profile, ok := ctx.Value("user").(*user.Profile)
+	if !ok {
+		i.logger.Error(er.ErrUserNotExists.Error())
+		return nil, er.ErrUserNotExists
+	}
+
+	if len(name) == 0 {
+		i.logger.Error(er.ErrEmptyName.Error())
+		return nil, er.ErrEmptyName
+	}
+
+	exists, err := i.repo.GetByID(ctx, id, profile.ID)
+	if err != nil {
+		i.logger.Error(er.ErrGetActivityByID.Error(), zap.Error(err), zap.Any("user", profile), zap.Int64("act_id", id))
+		return nil, er.ErrGetActivityByID
+	}
+	if exists == nil {
+		i.logger.Error(er.ErrActivityNotExists.Error(), zap.Any("user", profile), zap.Int64("act_id", id))
+		return nil, er.ErrActivityNotExists
+	}
+
+	exists.Name = name
+	ret, err := i.repo.Update(ctx, exists)
+	if err != nil {
+		i.logger.Error(er.ErrUpdateActivity.Error(), zap.Error(err), zap.Any("user", profile), zap.Any("exists", exists))
+		return nil, er.ErrUpdateActivity
+	}
+
+	return ret, nil
 }
 
 func (i *impl) Delete(ctx contextx.Contextx, id int64) error {

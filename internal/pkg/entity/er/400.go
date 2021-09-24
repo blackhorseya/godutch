@@ -12,8 +12,8 @@ var (
 	// ErrInvalidSize means given size is invalid which MUST be greater than 0
 	ErrInvalidSize = newAPPError(http.StatusBadRequest, 40003, "size MUST be greater than 0")
 
-	// ErrEmptyTitle means give title of task is empty value
-	ErrEmptyTitle = newAPPError(http.StatusBadRequest, 40004, "title must be NOT empty")
+	// ErrEmptyName means give name must NOT empty value
+	ErrEmptyName = newAPPError(http.StatusBadRequest, 40004, "name must be NOT empty")
 
 	// ErrEmptyEmail means email must be NOT empty
 	ErrEmptyEmail = newAPPError(http.StatusBadRequest, 40005, "email must be NOT empty")

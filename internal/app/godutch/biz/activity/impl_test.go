@@ -120,6 +120,8 @@ func (s *bizSuite) Test_impl_GetByID() {
 			if !reflect.DeepEqual(gotInfo, tt.wantInfo) {
 				t.Errorf("GetByID() gotInfo = %v, want %v", gotInfo, tt.wantInfo)
 			}
+
+			s.TearDownTest()
 		})
 	}
 }
@@ -221,6 +223,88 @@ func (s *bizSuite) Test_impl_List() {
 			if gotTotal != tt.wantTotal {
 				t.Errorf("List() gotTotal = %v, want %v", gotTotal, tt.wantTotal)
 			}
+
+			s.TearDownTest()
+		})
+	}
+}
+
+func (s *bizSuite) Test_impl_ChangeName() {
+	type args struct {
+		ctx  contextx.Contextx
+		id   int64
+		name string
+		mock func()
+	}
+	tests := []struct {
+		name     string
+		args     args
+		wantInfo *event.Activity
+		wantErr  bool
+	}{
+		{
+			name:     "missing user info in ctx then error",
+			args:     args{id: id1, name: "test", ctx: contextx.Background()},
+			wantInfo: nil,
+			wantErr:  true,
+		},
+		{
+			name:     "missing name then error",
+			args:     args{id: id1, name: "", ctx: ctx1},
+			wantInfo: nil,
+			wantErr:  true,
+		},
+		{
+			name: "get by id then error",
+			args: args{id: id1, name: "test", ctx: ctx1, mock: func() {
+				s.mock.On("GetByID", mock.Anything, id1, userID1).Return(nil, errors.New("error")).Once()
+			}},
+			wantInfo: nil,
+			wantErr:  true,
+		},
+		{
+			name: "get by id then not found",
+			args: args{id: id1, name: "test", ctx: ctx1, mock: func() {
+				s.mock.On("GetByID", mock.Anything, id1, userID1).Return(nil, nil).Once()
+			}},
+			wantInfo: nil,
+			wantErr:  true,
+		},
+		{
+			name: "update then error",
+			args: args{id: id1, name: "test", ctx: ctx1, mock: func() {
+				s.mock.On("GetByID", mock.Anything, id1, userID1).Return(act1, nil).Once()
+				s.mock.On("Update", mock.Anything, act1).Return(nil, errors.New("error")).Once()
+			}},
+			wantInfo: nil,
+			wantErr:  true,
+		},
+		{
+			name: "update then success",
+			args: args{id: id1, name: "test", ctx: ctx1, mock: func() {
+				s.mock.On("GetByID", mock.Anything, id1, userID1).Return(act1, nil).Once()
+				s.mock.On("Update", mock.Anything, act1).Return(act1, nil).Once()
+			}},
+			wantInfo: act1,
+			wantErr:  false,
+		},
+	}
+	for _, tt := range tests {
+		s.T().Run(tt.name, func(t *testing.T) {
+			if tt.args.mock != nil {
+				tt.args.mock()
+			}
+
+			gotInfo, err := s.biz.ChangeName(tt.args.ctx, tt.args.id, tt.args.name)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ChangeName() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(gotInfo, tt.wantInfo) {
+				t.Errorf("ChangeName() gotInfo = %v, want %v", gotInfo, tt.wantInfo)
+			}
+
+			s.TearDownTest()
 		})
 	}
 }
