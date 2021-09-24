@@ -112,6 +112,14 @@ func (i *impl) Update(ctx contextx.Contextx, updated *event.Activity) (info *eve
 }
 
 func (i *impl) Delete(ctx contextx.Contextx, id, userID int64) error {
-	// todo: 2021-09-23|22:44|Sean|impl me
-	panic("implement me")
+	timeout, cancel := contextx.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	stmt := `DELETE FROM activities WHERE id = ? and owner_id = ?`
+	_, err := i.rw.ExecContext(timeout, stmt, id, userID)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
