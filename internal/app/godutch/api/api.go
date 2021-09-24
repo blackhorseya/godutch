@@ -3,6 +3,7 @@ package api
 import (
 	// import swagger docs
 	_ "github.com/blackhorseya/godutch/api/docs"
+	"github.com/blackhorseya/godutch/internal/app/godutch/api/activity"
 	"github.com/blackhorseya/godutch/internal/app/godutch/api/health"
 	"github.com/blackhorseya/godutch/internal/app/godutch/api/user"
 	userB "github.com/blackhorseya/godutch/internal/app/godutch/biz/user"
@@ -17,7 +18,8 @@ import (
 // CreateInitHandlerFn serve caller to create init handler
 func CreateInitHandlerFn(userBiz userB.IBiz,
 	healthH health.IHandler,
-	userH user.IHandler) http.InitHandlers {
+	userH user.IHandler,
+	actH activity.IHandler) http.InitHandlers {
 	return func(r *gin.Engine) {
 		api := r.Group("api")
 		{
@@ -40,6 +42,15 @@ func CreateInitHandlerFn(userBiz userB.IBiz,
 				{
 					userG.GET("me", middlewares.AuthMiddleware(userBiz), userH.Me)
 				}
+
+				actG := v1.Group("activities", middlewares.AuthMiddleware(userBiz))
+				{
+					actG.GET(":id", actH.GetByID)
+					actG.GET("", actH.List)
+					actG.POST("", actH.NewWithMembers)
+					actG.PATCH(":id", actH.ChangeName)
+					actG.DELETE(":id", actH.Delete)
+				}
 			}
 		}
 	}
@@ -49,5 +60,6 @@ func CreateInitHandlerFn(userBiz userB.IBiz,
 var ProviderSet = wire.NewSet(
 	health.ProviderSet,
 	user.ProviderSet,
+	activity.ProviderSet,
 	CreateInitHandlerFn,
 )

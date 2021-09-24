@@ -8,9 +8,12 @@ package main
 import (
 	"github.com/blackhorseya/godutch/internal/app/godutch"
 	"github.com/blackhorseya/godutch/internal/app/godutch/api"
+	activity2 "github.com/blackhorseya/godutch/internal/app/godutch/api/activity"
 	health2 "github.com/blackhorseya/godutch/internal/app/godutch/api/health"
 	user2 "github.com/blackhorseya/godutch/internal/app/godutch/api/user"
 	"github.com/blackhorseya/godutch/internal/app/godutch/biz"
+	"github.com/blackhorseya/godutch/internal/app/godutch/biz/activity"
+	repo3 "github.com/blackhorseya/godutch/internal/app/godutch/biz/activity/repo"
 	"github.com/blackhorseya/godutch/internal/app/godutch/biz/health"
 	repo2 "github.com/blackhorseya/godutch/internal/app/godutch/biz/health/repo"
 	"github.com/blackhorseya/godutch/internal/app/godutch/biz/user"
@@ -75,7 +78,10 @@ func CreateApp(path2 string, nodeID int64) (*app.Application, error) {
 	healthIBiz := health.NewImpl(logger, repoIRepo)
 	iHandler := health2.NewImpl(logger, healthIBiz)
 	userIHandler := user2.NewImpl(logger, iBiz)
-	initHandlers := api.CreateInitHandlerFn(iBiz, iHandler, userIHandler)
+	iRepo2 := repo3.NewImpl(logger, db)
+	activityIBiz := activity.NewImpl(logger, iRepo2, node)
+	activityIHandler := activity2.NewImpl(logger, activityIBiz)
+	initHandlers := api.CreateInitHandlerFn(iBiz, iHandler, userIHandler, activityIHandler)
 	engine := http.NewRouter(httpOptions, logger, initHandlers)
 	server, err := http.New(httpOptions, logger, engine)
 	if err != nil {
