@@ -10,6 +10,7 @@ import (
 	"github.com/blackhorseya/godutch/internal/pkg/entity/event"
 	"github.com/blackhorseya/godutch/internal/pkg/entity/user"
 	"github.com/bwmarrin/snowflake"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/zap"
@@ -118,6 +119,107 @@ func (s *bizSuite) Test_impl_GetByID() {
 			}
 			if !reflect.DeepEqual(gotInfo, tt.wantInfo) {
 				t.Errorf("GetByID() gotInfo = %v, want %v", gotInfo, tt.wantInfo)
+			}
+		})
+	}
+}
+
+func (s *bizSuite) Test_impl_List() {
+	type args struct {
+		ctx  contextx.Contextx
+		page int
+		size int
+		mock func()
+	}
+	tests := []struct {
+		name      string
+		args      args
+		wantInfos []*event.Activity
+		wantTotal int
+		wantErr   bool
+	}{
+		{
+			name:      "missing user info in ctx then error",
+			args:      args{page: 0, size: 10, ctx: contextx.Background()},
+			wantInfos: nil,
+			wantTotal: 0,
+			wantErr:   true,
+		},
+		{
+			name:      "invalid page then error",
+			args:      args{page: -1, size: 10, ctx: ctx1},
+			wantInfos: nil,
+			wantTotal: 0,
+			wantErr:   true,
+		},
+		{
+			name:      "invalid size then error",
+			args:      args{page: 0, size: -1, ctx: ctx1},
+			wantInfos: nil,
+			wantTotal: 0,
+			wantErr:   true,
+		},
+		{
+			name: "list then error",
+			args: args{page: 0, size: 10, ctx: ctx1, mock: func() {
+				s.mock.On("List", mock.Anything, userID1, 10, 0).
+					Return(nil, errors.New("error")).Once()
+			}},
+			wantInfos: nil,
+			wantTotal: 0,
+			wantErr:   true,
+		},
+		{
+			name: "list then not found",
+			args: args{page: 0, size: 10, ctx: ctx1, mock: func() {
+				s.mock.On("List", mock.Anything, userID1, 10, 0).
+					Return(nil, nil).Once()
+			}},
+			wantInfos: nil,
+			wantTotal: 0,
+			wantErr:   true,
+		},
+		{
+			name: "count then error",
+			args: args{page: 0, size: 10, ctx: ctx1, mock: func() {
+				s.mock.On("List", mock.Anything, userID1, 10, 0).
+					Return([]*event.Activity{act1}, nil).Once()
+				s.mock.On("Count", mock.Anything, userID1).
+					Return(0, errors.New("error")).Once()
+			}},
+			wantInfos: nil,
+			wantTotal: 0,
+			wantErr:   true,
+		},
+		{
+			name: "list and count then success",
+			args: args{page: 0, size: 10, ctx: ctx1, mock: func() {
+				s.mock.On("List", mock.Anything, userID1, 10, 0).
+					Return([]*event.Activity{act1}, nil).Once()
+				s.mock.On("Count", mock.Anything, userID1).
+					Return(10, nil).Once()
+			}},
+			wantInfos: []*event.Activity{act1},
+			wantTotal: 10,
+			wantErr:   false,
+		},
+	}
+	for _, tt := range tests {
+		s.T().Run(tt.name, func(t *testing.T) {
+			if tt.args.mock != nil {
+				tt.args.mock()
+			}
+
+			gotInfos, gotTotal, err := s.biz.List(tt.args.ctx, tt.args.page, tt.args.size)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("List() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(gotInfos, tt.wantInfos) {
+				t.Errorf("List() gotInfos = %v, want %v", gotInfos, tt.wantInfos)
+			}
+			if gotTotal != tt.wantTotal {
+				t.Errorf("List() gotTotal = %v, want %v", gotTotal, tt.wantTotal)
 			}
 		})
 	}

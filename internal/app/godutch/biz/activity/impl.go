@@ -46,8 +46,39 @@ func (i *impl) GetByID(ctx contextx.Contextx, id int64) (info *event.Activity, e
 }
 
 func (i *impl) List(ctx contextx.Contextx, page, size int) (infos []*event.Activity, total int, err error) {
-	// todo: 2021-09-24|11:48|Sean|impl me
-	panic("implement me")
+	profile, ok := ctx.Value("user").(*user.Profile)
+	if !ok {
+		i.logger.Error(er.ErrUserNotExists.Error())
+		return nil, 0, er.ErrUserNotExists
+	}
+
+	if page < 0 {
+		i.logger.Error(er.ErrInvalidPage.Error(), zap.Int("page", page))
+		return nil, 0, er.ErrInvalidPage
+	}
+
+	if size < 0 {
+		i.logger.Error(er.ErrInvalidSize.Error(), zap.Int("size", size))
+		return nil, 0, er.ErrInvalidSize
+	}
+
+	ret, err := i.repo.List(ctx, profile.ID, size, page*size)
+	if err != nil {
+		i.logger.Error(er.ErrListActivities.Error(), zap.Error(err), zap.Any("user", profile), zap.Int("page", page), zap.Int("size", size))
+		return nil, 0, er.ErrListActivities
+	}
+	if len(ret) == 0 {
+		i.logger.Error(er.ErrActivityNotExists.Error(), zap.Any("user", profile), zap.Int("page", page), zap.Int("size", size))
+		return nil, 0, er.ErrActivityNotExists
+	}
+
+	total, err = i.repo.Count(ctx, profile.ID)
+	if err != nil {
+		i.logger.Error(er.ErrCountActivity.Error(), zap.Error(err), zap.Any("user", profile))
+		return nil, 0, er.ErrCountActivity
+	}
+
+	return ret, total, nil
 }
 
 func (i *impl) NewWithMembers(ctx contextx.Contextx, name string, email []string) (info *event.Activity, err error) {
