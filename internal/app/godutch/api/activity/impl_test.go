@@ -104,3 +104,62 @@ func (s *handlerSuite) Test_impl_GetByID() {
 		})
 	}
 }
+
+func (s *handlerSuite) Test_impl_List() {
+	s.r.GET("/api/v1/activities", s.handler.List)
+
+	type args struct {
+		page string
+		size string
+		mock func()
+	}
+	tests := []struct {
+		name     string
+		args     args
+		wantCode int
+	}{
+		{
+			name:     "a 10 then 400",
+			args:     args{page: "a", size: "10"},
+			wantCode: 400,
+		},
+		{
+			name:     "1 b then 400",
+			args:     args{page: "1", size: "b"},
+			wantCode: 400,
+		},
+		{
+			name: "1 5 then 500",
+			args: args{page: "1", size: "5", mock: func() {
+				s.mock.On("List", mock.Anything, 1, 5).Return(nil, 0, er.ErrListActivities).Once()
+			}},
+			wantCode: 500,
+		},
+		{
+			name: "1 5 then 200",
+			args: args{page: "1", size: "5", mock: func() {
+				s.mock.On("List", mock.Anything, 1, 5).Return([]*event.Activity{act1}, 10, nil).Once()
+			}},
+			wantCode: 200,
+		},
+	}
+	for _, tt := range tests {
+		s.T().Run(tt.name, func(t *testing.T) {
+			if tt.args.mock != nil {
+				tt.args.mock()
+			}
+
+			uri := fmt.Sprintf("/api/v1/activities?page=%v&size=%v", tt.args.page, tt.args.size)
+			req := httptest.NewRequest(http.MethodGet, uri, nil)
+			w := httptest.NewRecorder()
+			s.r.ServeHTTP(w, req)
+
+			got := w.Result()
+			defer got.Body.Close()
+
+			s.EqualValuesf(tt.wantCode, got.StatusCode, "List() code = %v, wantCode = %v", got.StatusCode, tt.wantCode)
+
+			s.TearDownTest()
+		})
+	}
+}
