@@ -122,8 +122,23 @@ type reqNew struct {
 // @Failure 500 {object} er.APPError
 // @Router /v1/activities [post]
 func (i *impl) NewWithMembers(c *gin.Context) {
-	// todo: 2021-09-25|01:03|Sean|impl me
-	panic("implement me")
+	ctx := c.MustGet("ctx").(contextx.Contextx)
+
+	var data *reqNew
+	if err := c.ShouldBindJSON(&data); err != nil {
+		i.logger.Error(er.ErrEmptyName.Error(), zap.Error(err))
+		c.Error(er.ErrEmptyName)
+		return
+	}
+
+	ret, err := i.biz.NewWithMembers(ctx, data.Name, data.Emails)
+	if err != nil {
+		i.logger.Error(er.ErrCreateActivity.Error(), zap.Error(err), zap.Any("payload", data))
+		c.Error(err)
+		return
+	}
+
+	c.JSON(http.StatusCreated, response.OK.WithData(ret))
 }
 
 type reqName struct {

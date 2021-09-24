@@ -1,6 +1,8 @@
 package activity
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -158,6 +160,61 @@ func (s *handlerSuite) Test_impl_List() {
 			defer got.Body.Close()
 
 			s.EqualValuesf(tt.wantCode, got.StatusCode, "List() code = %v, wantCode = %v", got.StatusCode, tt.wantCode)
+
+			s.TearDownTest()
+		})
+	}
+}
+
+func (s *handlerSuite) Test_impl_NewWithMembers() {
+	s.r.POST("/api/v1/activities", s.handler.NewWithMembers)
+
+	type args struct {
+		name   string
+		emails []string
+		mock   func()
+	}
+	tests := []struct {
+		name     string
+		args     args
+		wantCode int
+	}{
+		{
+			name:     "missing name then 400",
+			args:     args{name: "", emails: []string{"test"}},
+			wantCode: 400,
+		},
+		{
+			name: "new with members then 500",
+			args: args{name: "test", emails: []string{"test"}, mock: func() {
+				s.mock.On("NewWithMembers", mock.Anything, "test", []string{"test"}).Return(nil, er.ErrCreateActivity).Once()
+			}},
+			wantCode: 500,
+		},
+		{
+			name: "new with members then 201",
+			args: args{name: "test", emails: []string{"test"}, mock: func() {
+				s.mock.On("NewWithMembers", mock.Anything, "test", []string{"test"}).Return(act1, nil).Once()
+			}},
+			wantCode: 201,
+		},
+	}
+	for _, tt := range tests {
+		s.T().Run(tt.name, func(t *testing.T) {
+			if tt.args.mock != nil {
+				tt.args.mock()
+			}
+
+			uri := fmt.Sprintf("/api/v1/activities")
+			data, _ := json.Marshal(&reqNew{Name: tt.args.name, Emails: tt.args.emails})
+			req := httptest.NewRequest(http.MethodPost, uri, bytes.NewBuffer(data))
+			w := httptest.NewRecorder()
+			s.r.ServeHTTP(w, req)
+
+			got := w.Result()
+			defer got.Body.Close()
+
+			s.EqualValuesf(tt.wantCode, got.StatusCode, "NewWithMembers() code = %v, wantCode = %v", got.StatusCode, tt.wantCode)
 
 			s.TearDownTest()
 		})
