@@ -14,6 +14,29 @@ type IRepo struct {
 	mock.Mock
 }
 
+// AddMembers provides a mock function with given fields: ctx, updated
+func (_m *IRepo) AddMembers(ctx contextx.Contextx, updated *event.Activity) (*event.Activity, error) {
+	ret := _m.Called(ctx, updated)
+
+	var r0 *event.Activity
+	if rf, ok := ret.Get(0).(func(contextx.Contextx, *event.Activity) *event.Activity); ok {
+		r0 = rf(ctx, updated)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*event.Activity)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(contextx.Contextx, *event.Activity) error); ok {
+		r1 = rf(ctx, updated)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // Count provides a mock function with given fields: ctx, userID
 func (_m *IRepo) Count(ctx contextx.Contextx, userID int64) (int, error) {
 	ret := _m.Called(ctx, userID)
