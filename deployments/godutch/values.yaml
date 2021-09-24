@@ -5,7 +5,7 @@
 replicaCount: 1
 
 image:
-  repository: nginx
+  repository: gcr.io/sean-side/godutch
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: ""
@@ -56,7 +56,13 @@ ingress:
   #    hosts:
   #      - chart-example.local
 
-resources: {}
+resources:
+  limits:
+    cpu: 100m
+    memory: 128Mi
+  requests:
+    cpu: 10m
+    memory: 128Mi
   # We usually recommend not to specify default resources and to leave this as a conscious
   # choice for the user. This also increases chances charts run on environments with little
   # resources, such as Minikube. If you do want to specify resources, uncomment the following
@@ -80,3 +86,38 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
+
+metrics:
+  serviceMonitor:
+    enabled: true
+    additionalLabels:
+      release: ops
+    # The label to use to retrieve the job name from.
+    # jobLabel: "app.kubernetes.io/name"
+    namespace: ""
+    namespaceSelector: {}
+    # Default: scrape .Release.Namespace only
+    # To scrape all, use the following:
+    # namespaceSelector:
+    #   any: true
+    scrapeInterval: 30s
+    # honorLabels: true
+    targetLabels: []
+    metricRelabelings: []
+
+app: |-
+  app:
+    name: "godutch"
+    clientID: "7d01eb0200bc730a2c58"
+
+  http:
+    port: 80
+    mode: "debug"
+
+  db:
+    debug: true
+    url: "godutch:changeme@tcp(localhost:3308)/godutch?charset=utf8mb4&parseTime=True&loc=Local"
+
+  log:
+    format: text
+    level: debug
