@@ -119,6 +119,17 @@ func (i *impl) ChangeName(ctx contextx.Contextx, id int64, name string) (info *e
 }
 
 func (i *impl) Delete(ctx contextx.Contextx, id int64) error {
-	// todo: 2021-09-24|11:48|Sean|impl me
-	panic("implement me")
+	profile, ok := ctx.Value("user").(*user.Profile)
+	if !ok {
+		i.logger.Error(er.ErrUserNotExists.Error())
+		return er.ErrUserNotExists
+	}
+
+	err := i.repo.Delete(ctx, id, profile.ID)
+	if err != nil {
+		i.logger.Error(er.ErrDeleteActivity.Error(), zap.Error(err), zap.Any("user", profile), zap.Int64("act_id", id))
+		return er.ErrDeleteActivity
+	}
+
+	return nil
 }

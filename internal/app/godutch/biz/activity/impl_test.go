@@ -308,3 +308,49 @@ func (s *bizSuite) Test_impl_ChangeName() {
 		})
 	}
 }
+
+func (s *bizSuite) Test_impl_Delete() {
+	type args struct {
+		ctx  contextx.Contextx
+		id   int64
+		mock func()
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{
+			name:    "missing user info in ctx then error",
+			args:    args{id: id1, ctx: contextx.Background()},
+			wantErr: true,
+		},
+		{
+			name: "delete then error",
+			args: args{id: id1, ctx: ctx1, mock: func() {
+				s.mock.On("Delete", mock.Anything, id1, userID1).Return(errors.New("error")).Once()
+			}},
+			wantErr: true,
+		},
+		{
+			name: "delete then success",
+			args: args{id: id1, ctx: ctx1, mock: func() {
+				s.mock.On("Delete", mock.Anything, id1, userID1).Return(nil).Once()
+			}},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		s.T().Run(tt.name, func(t *testing.T) {
+			if tt.args.mock != nil {
+				tt.args.mock()
+			}
+
+			if err := s.biz.Delete(tt.args.ctx, tt.args.id); (err != nil) != tt.wantErr {
+				t.Errorf("Delete() error = %v, wantErr %v", err, tt.wantErr)
+			}
+
+			s.TearDownTest()
+		})
+	}
+}
