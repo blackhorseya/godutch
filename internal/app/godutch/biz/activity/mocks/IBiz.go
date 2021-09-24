@@ -74,6 +74,29 @@ func (_m *IBiz) GetByID(ctx contextx.Contextx, id int64) (*event.Activity, error
 	return r0, r1
 }
 
+// InviteMembers provides a mock function with given fields: ctx, id, emails
+func (_m *IBiz) InviteMembers(ctx contextx.Contextx, id int64, emails []string) (*event.Activity, error) {
+	ret := _m.Called(ctx, id, emails)
+
+	var r0 *event.Activity
+	if rf, ok := ret.Get(0).(func(contextx.Contextx, int64, []string) *event.Activity); ok {
+		r0 = rf(ctx, id, emails)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*event.Activity)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(contextx.Contextx, int64, []string) error); ok {
+		r1 = rf(ctx, id, emails)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // List provides a mock function with given fields: ctx, page, size
 func (_m *IBiz) List(ctx contextx.Contextx, page int, size int) ([]*event.Activity, int, error) {
 	ret := _m.Called(ctx, page, size)
