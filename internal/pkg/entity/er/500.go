@@ -52,8 +52,8 @@ var (
 	// ErrUpdateGoal means update a objective is failure
 	ErrUpdateGoal = newAPPError(http.StatusInternalServerError, 50024, "update a objective is failure")
 
-	// ErrGetGoalByID means get objective by id is failure
-	ErrGetGoalByID = newAPPError(http.StatusInternalServerError, 50025, "get objective by id is failure")
+	// ErrGetActivityByID means get activity by id is failure
+	ErrGetActivityByID = newAPPError(http.StatusInternalServerError, 50025, "get activity by id is failure")
 
 	// ErrDeleteGoal means delete a objective by id is failure
 	ErrDeleteGoal = newAPPError(http.StatusInternalServerError, 50026, "delete a objective by id is failure")
