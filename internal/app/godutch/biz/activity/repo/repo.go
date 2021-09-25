@@ -3,6 +3,7 @@ package repo
 import (
 	"github.com/blackhorseya/godutch/internal/pkg/base/contextx"
 	"github.com/blackhorseya/godutch/internal/pkg/entity/event"
+	"github.com/blackhorseya/godutch/internal/pkg/entity/user"
 	"github.com/google/wire"
 )
 
@@ -15,7 +16,7 @@ type IRepo interface {
 	Create(ctx contextx.Contextx, created *event.Activity) (info *event.Activity, err error)
 
 	// AddMembers serve caller to add members into activity
-	AddMembers(ctx contextx.Contextx, updated *event.Activity) (info *event.Activity, err error)
+	AddMembers(ctx contextx.Contextx, id int64, newUsers []*user.Profile) (info *event.Activity, err error)
 
 	// List serve caller to list all activities
 	List(ctx contextx.Contextx, userID int64, limit, offset int) (infos []*event.Activity, err error)

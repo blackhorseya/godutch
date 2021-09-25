@@ -6,6 +6,7 @@ import (
 
 	"github.com/blackhorseya/godutch/internal/pkg/base/contextx"
 	"github.com/blackhorseya/godutch/internal/pkg/entity/event"
+	"github.com/blackhorseya/godutch/internal/pkg/entity/user"
 	"github.com/jmoiron/sqlx"
 	"go.uber.org/zap"
 )
@@ -62,10 +63,12 @@ func (i *impl) Create(ctx contextx.Contextx, created *event.Activity) (info *eve
 		return nil, err
 	}
 
+	// todo: 2021-09-25|11:55|Sean|insert members into map
+
 	return created, nil
 }
 
-func (i *impl) AddMembers(ctx contextx.Contextx, updated *event.Activity) (info *event.Activity, err error) {
+func (i *impl) AddMembers(ctx contextx.Contextx, id int64, newUsers []*user.Profile) (info *event.Activity, err error) {
 	// todo: 2021-09-25|00:30|Sean|impl me
 	panic("implement me")
 }
