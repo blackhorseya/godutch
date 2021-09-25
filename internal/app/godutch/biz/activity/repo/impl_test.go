@@ -210,6 +210,14 @@ SELECT
 FROM activities act 
 JOIN users owner ON owner.id = act.owner_id`
 
+	stmt1 := `
+SELECT member.id    AS id,
+       member.email AS email,
+       member.name  AS name
+FROM activities act
+         JOIN activities_users_map map on act.id = map.activity_id
+         JOIN users member on map.user_id = member.id`
+
 	type args struct {
 		userID int64
 		limit  int
@@ -249,6 +257,9 @@ JOIN users owner ON owner.id = act.owner_id`
 					WithArgs(userID1, 5, 0).
 					WillReturnRows(sqlmock.NewRows([]string{"id", "name", "created_at"}).
 						AddRow(act2.ID, act2.Name, act2.CreatedAt))
+				s.mock.ExpectQuery(stmt1).
+					WithArgs(act1.ID).
+					WillReturnError(errors.New("error"))
 			}},
 			wantInfos: []*event.Activity{act2},
 			wantErr:   false,

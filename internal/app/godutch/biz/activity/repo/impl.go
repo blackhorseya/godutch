@@ -147,6 +147,24 @@ WHERE owner_id = ? limit ? offset ?`
 		return nil, err
 	}
 
+	for _, activity := range ret {
+		var members []*user.Profile
+		stmt1 := `
+SELECT member.id    AS id,
+       member.email AS email,
+       member.name  AS name
+FROM activities act
+         JOIN activities_users_map map on act.id = map.activity_id
+         JOIN users member on map.user_id = member.id
+WHERE act.id = ?`
+		err := i.rw.SelectContext(timeout, &members, stmt1, activity.ID)
+		if err != nil {
+			continue
+		}
+
+		activity.Members = members
+	}
+
 	return ret, nil
 }
 
