@@ -12,13 +12,13 @@ type IBiz interface {
 	GetByID(ctx contextx.Contextx, id int64) (info *event.Record, err error)
 
 	// List serve caller to list all records by page and size
-	List(ctx contextx.Contextx, page, size int) (infos []*event.Record, err error)
+	List(ctx contextx.Contextx, actID int64, page, size int) (infos []*event.Record, err error)
 
 	// NewRecord serve caller to create a new record into spend history
 	NewRecord(ctx contextx.Contextx, created *event.Record) (info *event.Record, err error)
 
 	// Delete serve caller to delete a record by id
-	Delete(ctx contextx.Contextx, id int64) error
+	Delete(ctx contextx.Contextx, id, actID int64) error
 }
 
 // ProviderSet is a provider set for wire
