@@ -57,6 +57,9 @@ var (
 
 	// ErrDeleteActivity means delete an activity by id is failure
 	ErrDeleteActivity = newAPPError(http.StatusInternalServerError, 50026, "delete an activity by id is failure")
+
+	// ErrInviteMembers means invite new members is failure
+	ErrInviteMembers = newAPPError(http.StatusInternalServerError, 50027, "invite new members is failure")
 )
 
 var (

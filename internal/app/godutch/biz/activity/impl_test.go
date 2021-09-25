@@ -387,8 +387,17 @@ func (s *bizSuite) Test_impl_NewWithMembers() {
 			wantErr:  true,
 		},
 		{
+			name: "get by emails then error",
+			args: args{name: "test", email: []string{"test"}, ctx: ctx1, mock: func() {
+				s.mock.On("GetByEmails", mock.Anything, []string{"test"}).Return(nil, errors.New("error")).Once()
+			}},
+			wantInfo: nil,
+			wantErr:  true,
+		},
+		{
 			name: "new an act then error",
 			args: args{name: "test", email: []string{"test"}, ctx: ctx1, mock: func() {
+				s.mock.On("GetByEmails", mock.Anything, []string{"test"}).Return([]*user.Profile{user1}, nil).Once()
 				s.mock.On("Create", mock.Anything, mock.Anything).Return(nil, errors.New("error")).Once()
 			}},
 			wantInfo: nil,
@@ -397,6 +406,7 @@ func (s *bizSuite) Test_impl_NewWithMembers() {
 		{
 			name: "new an act then success",
 			args: args{name: "test", email: []string{"test"}, ctx: ctx1, mock: func() {
+				s.mock.On("GetByEmails", mock.Anything, []string{"test"}).Return([]*user.Profile{user1}, nil).Once()
 				s.mock.On("Create", mock.Anything, mock.Anything).Return(act1, nil).Once()
 			}},
 			wantInfo: act1,
@@ -416,6 +426,66 @@ func (s *bizSuite) Test_impl_NewWithMembers() {
 			}
 			if !reflect.DeepEqual(gotInfo, tt.wantInfo) {
 				t.Errorf("NewWithMembers() gotInfo = %v, want %v", gotInfo, tt.wantInfo)
+			}
+
+			s.TearDownTest()
+		})
+	}
+}
+
+func (s *bizSuite) Test_impl_InviteMembers() {
+	type args struct {
+		ctx    contextx.Contextx
+		id     int64
+		emails []string
+		mock   func()
+	}
+	tests := []struct {
+		name     string
+		args     args
+		wantInfo *event.Activity
+		wantErr  bool
+	}{
+		{
+			name: "get user by emails then error",
+			args: args{id: id1, emails: []string{"test"}, ctx: ctx1, mock: func() {
+				s.mock.On("GetByEmails", mock.Anything, []string{"test"}).Return(nil, errors.New("error")).Once()
+			}},
+			wantInfo: nil,
+			wantErr:  true,
+		},
+		{
+			name: "invite members then error",
+			args: args{id: id1, emails: []string{"test"}, ctx: ctx1, mock: func() {
+				s.mock.On("GetByEmails", mock.Anything, []string{"test"}).Return([]*user.Profile{user1}, nil).Once()
+				s.mock.On("AddMembers", mock.Anything, id1, []*user.Profile{user1}).Return(nil, errors.New("error")).Once()
+			}},
+			wantInfo: nil,
+			wantErr:  true,
+		},
+		{
+			name: "invite members then success",
+			args: args{id: id1, emails: []string{"test"}, ctx: ctx1, mock: func() {
+				s.mock.On("GetByEmails", mock.Anything, []string{"test"}).Return([]*user.Profile{user1}, nil).Once()
+				s.mock.On("AddMembers", mock.Anything, id1, []*user.Profile{user1}).Return(act1, nil).Once()
+			}},
+			wantInfo: act1,
+			wantErr:  false,
+		},
+	}
+	for _, tt := range tests {
+		s.T().Run(tt.name, func(t *testing.T) {
+			if tt.args.mock != nil {
+				tt.args.mock()
+			}
+
+			gotInfo, err := s.biz.InviteMembers(tt.args.ctx, tt.args.id, tt.args.emails)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("InviteMembers() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(gotInfo, tt.wantInfo) {
+				t.Errorf("InviteMembers() gotInfo = %v, want %v", gotInfo, tt.wantInfo)
 			}
 
 			s.TearDownTest()

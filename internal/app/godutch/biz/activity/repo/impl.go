@@ -6,6 +6,7 @@ import (
 
 	"github.com/blackhorseya/godutch/internal/pkg/base/contextx"
 	"github.com/blackhorseya/godutch/internal/pkg/entity/event"
+	"github.com/blackhorseya/godutch/internal/pkg/entity/user"
 	"github.com/jmoiron/sqlx"
 	"go.uber.org/zap"
 )
@@ -49,7 +50,42 @@ WHERE act.id = ?`
 		return nil, err
 	}
 
+	var members []*user.Profile
+	stmt1 := `
+SELECT member.id    AS id,
+       member.email AS email,
+       member.name  AS name
+FROM activities act
+         JOIN activities_users_map map on act.id = map.activity_id
+         JOIN users member on map.user_id = member.id
+WHERE act.id = ?`
+	err = i.rw.SelectContext(timeout, &members, stmt1, id)
+	if err != nil {
+		return nil, err
+	}
+
+	ret.Members = members
+
 	return &ret, nil
+}
+
+func (i *impl) GetByEmails(ctx contextx.Contextx, emails []string) (infos []*user.Profile, err error) {
+	timeout, cancel := contextx.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	var users []*user.Profile
+	for _, email := range emails {
+		profile := user.Profile{}
+		stmt := `SELECT id, email, name FROM users WHERE email = ?`
+		err := i.rw.GetContext(timeout, &profile, stmt, email)
+		if err != nil {
+			continue
+		}
+
+		users = append(users, &profile)
+	}
+
+	return users, nil
 }
 
 func (i *impl) Create(ctx contextx.Contextx, created *event.Activity) (info *event.Activity, err error) {
@@ -62,12 +98,43 @@ func (i *impl) Create(ctx contextx.Contextx, created *event.Activity) (info *eve
 		return nil, err
 	}
 
+	type mapping struct {
+		ActivityID int64 `json:"activity_id" db:"activity_id"`
+		UserID     int64 `json:"user_id" db:"user_id"`
+	}
+	var members []*mapping
+	for _, member := range created.Members {
+		members = append(members, &mapping{ActivityID: created.ID, UserID: member.ID})
+	}
+	stmt = `INSERT INTO activities_users_map (activity_id, user_id) VALUES (:activity_id, :user_id)`
+	_, err = i.rw.NamedExecContext(timeout, stmt, members)
+	if err != nil {
+		return nil, err
+	}
+
 	return created, nil
 }
 
-func (i *impl) AddMembers(ctx contextx.Contextx, updated *event.Activity) (info *event.Activity, err error) {
-	// todo: 2021-09-25|00:30|Sean|impl me
-	panic("implement me")
+func (i *impl) AddMembers(ctx contextx.Contextx, id int64, newUsers []*user.Profile) (info *event.Activity, err error) {
+	timeout, cancel := contextx.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	type mapping struct {
+		ActivityID int64 `json:"activity_id" db:"activity_id"`
+		UserID     int64 `json:"user_id" db:"user_id"`
+	}
+	var members []*mapping
+	for _, newUser := range newUsers {
+		members = append(members, &mapping{ActivityID: id, UserID: newUser.ID})
+	}
+
+	stmt := `INSERT INTO activities_users_map (activity_id, user_id) VALUES (:activity_id, :user_id)`
+	_, err = i.rw.NamedExecContext(timeout, stmt, members)
+	if err != nil {
+		return nil, err
+	}
+
+	return nil, nil
 }
 
 func (i *impl) List(ctx contextx.Contextx, userID int64, limit, offset int) (infos []*event.Activity, err error) {
@@ -94,6 +161,24 @@ WHERE owner_id = ? limit ? offset ?`
 		}
 
 		return nil, err
+	}
+
+	for _, activity := range ret {
+		var members []*user.Profile
+		stmt1 := `
+SELECT member.id    AS id,
+       member.email AS email,
+       member.name  AS name
+FROM activities act
+         JOIN activities_users_map map on act.id = map.activity_id
+         JOIN users member on map.user_id = member.id
+WHERE act.id = ?`
+		err := i.rw.SelectContext(timeout, &members, stmt1, activity.ID)
+		if err != nil {
+			continue
+		}
+
+		activity.Members = members
 	}
 
 	return ret, nil

@@ -32,6 +32,7 @@ var (
 		OwnerID: userID1,
 		Name:    "test",
 		Owner:   user1,
+		Members: []*user.Profile{user1},
 	}
 
 	act2 = &event.Activity{
@@ -65,6 +66,12 @@ func TestRepoSuite(t *testing.T) {
 
 func (s *repoSuite) Test_impl_GetByID() {
 	stmt := "SELECT act.id, act.name, act.owner_id, owner.id \"owner.id\", owner.email \"owner.email\", owner.name \"owner.name\", act.created_at FROM activities act JOIN users owner ON owner.id = act.owner_id"
+	stmt1 := `SELECT member.id    AS id,
+       member.email AS email,
+       member.name  AS name
+FROM activities act
+         JOIN activities_users_map map on act.id = map.activity_id
+         JOIN users member on map.user_id = member.id`
 
 	type args struct {
 		id     int64
@@ -98,12 +105,30 @@ func (s *repoSuite) Test_impl_GetByID() {
 			wantErr:  false,
 		},
 		{
+			name: "get members then error",
+			args: args{id: id1, userID: userID1, mock: func() {
+				s.mock.ExpectQuery(stmt).
+					WithArgs(id1).
+					WillReturnRows(sqlmock.NewRows([]string{"id", "name", "owner_id", "owner.id", "owner.email", "owner.name", "created_at"}).
+						AddRow(act1.ID, act1.Name, act1.OwnerID, user1.ID, user1.Email, user1.Name, act1.CreatedAt))
+				s.mock.ExpectQuery(stmt1).
+					WithArgs(act1.ID).
+					WillReturnError(errors.New("error"))
+			}},
+			wantInfo: nil,
+			wantErr:  true,
+		},
+		{
 			name: "get by id then success",
 			args: args{id: id1, userID: userID1, mock: func() {
 				s.mock.ExpectQuery(stmt).
 					WithArgs(id1).
 					WillReturnRows(sqlmock.NewRows([]string{"id", "name", "owner_id", "owner.id", "owner.email", "owner.name", "created_at"}).
 						AddRow(act1.ID, act1.Name, act1.OwnerID, user1.ID, user1.Email, user1.Name, act1.CreatedAt))
+				s.mock.ExpectQuery(stmt1).
+					WithArgs(act1.ID).
+					WillReturnRows(sqlmock.NewRows([]string{"id", "email", "name"}).
+						AddRow(user1.ID, user1.Email, user1.Name))
 			}},
 			wantInfo: act1,
 			wantErr:  false,
@@ -129,6 +154,7 @@ func (s *repoSuite) Test_impl_GetByID() {
 
 func (s *repoSuite) Test_impl_Create() {
 	stmt := "INSERT INTO activities"
+	stmt1 := "INSERT INTO activities_users_map"
 
 	type args struct {
 		created *event.Activity
@@ -151,10 +177,26 @@ func (s *repoSuite) Test_impl_Create() {
 			wantErr:  true,
 		},
 		{
+			name: "insert map then error",
+			args: args{created: act1, mock: func() {
+				s.mock.ExpectExec(stmt).
+					WithArgs(act1.ID, act1.Name, act1.OwnerID, act1.CreatedAt).
+					WillReturnResult(sqlmock.NewResult(1, 1))
+				s.mock.ExpectExec(stmt1).
+					WithArgs(act1.ID, user1.ID).
+					WillReturnError(errors.New("error"))
+			}},
+			wantInfo: nil,
+			wantErr:  true,
+		},
+		{
 			name: "create then success",
 			args: args{created: act1, mock: func() {
 				s.mock.ExpectExec(stmt).
 					WithArgs(act1.ID, act1.Name, act1.OwnerID, act1.CreatedAt).
+					WillReturnResult(sqlmock.NewResult(1, 1))
+				s.mock.ExpectExec(stmt1).
+					WithArgs(act1.ID, user1.ID).
 					WillReturnResult(sqlmock.NewResult(1, 1))
 			}},
 			wantInfo: act1,
@@ -191,6 +233,14 @@ SELECT
        owner.created_at "owner.created_at" 
 FROM activities act 
 JOIN users owner ON owner.id = act.owner_id`
+
+	stmt1 := `
+SELECT member.id    AS id,
+       member.email AS email,
+       member.name  AS name
+FROM activities act
+         JOIN activities_users_map map on act.id = map.activity_id
+         JOIN users member on map.user_id = member.id`
 
 	type args struct {
 		userID int64
@@ -231,6 +281,9 @@ JOIN users owner ON owner.id = act.owner_id`
 					WithArgs(userID1, 5, 0).
 					WillReturnRows(sqlmock.NewRows([]string{"id", "name", "created_at"}).
 						AddRow(act2.ID, act2.Name, act2.CreatedAt))
+				s.mock.ExpectQuery(stmt1).
+					WithArgs(act1.ID).
+					WillReturnError(errors.New("error"))
 			}},
 			wantInfos: []*event.Activity{act2},
 			wantErr:   false,
@@ -391,6 +444,112 @@ func (s *repoSuite) Test_impl_Delete() {
 
 			if err := s.repo.Delete(contextx.Background(), tt.args.id, tt.args.userID); (err != nil) != tt.wantErr {
 				t.Errorf("Delete() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func (s *repoSuite) Test_impl_AddMembers() {
+	stmt := `INSERT INTO activities_users_map`
+
+	type args struct {
+		id       int64
+		newUsers []*user.Profile
+		mock     func()
+	}
+	tests := []struct {
+		name     string
+		args     args
+		wantInfo *event.Activity
+		wantErr  bool
+	}{
+		{
+			name: "add members then error",
+			args: args{id: id1, newUsers: []*user.Profile{user1}, mock: func() {
+				s.mock.ExpectExec(stmt).
+					WithArgs(act1.ID, user1.ID).
+					WillReturnError(errors.New("error"))
+			}},
+			wantInfo: nil,
+			wantErr:  true,
+		},
+		{
+			name: "add members then success",
+			args: args{id: id1, newUsers: []*user.Profile{user1}, mock: func() {
+				s.mock.ExpectExec(stmt).
+					WithArgs(act1.ID, user1.ID).
+					WillReturnResult(sqlmock.NewResult(1, 1))
+			}},
+			wantInfo: nil,
+			wantErr:  false,
+		},
+	}
+	for _, tt := range tests {
+		s.T().Run(tt.name, func(t *testing.T) {
+			if tt.args.mock != nil {
+				tt.args.mock()
+			}
+
+			gotInfo, err := s.repo.AddMembers(contextx.Background(), tt.args.id, tt.args.newUsers)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("AddMembers() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(gotInfo, tt.wantInfo) {
+				t.Errorf("AddMembers() gotInfo = %v, want %v", gotInfo, tt.wantInfo)
+			}
+		})
+	}
+}
+
+func (s *repoSuite) Test_impl_GetByEmails() {
+	stmt := "SELECT id, email, name FROM users"
+
+	type args struct {
+		emails []string
+		mock   func()
+	}
+	tests := []struct {
+		name      string
+		args      args
+		wantInfos []*user.Profile
+		wantErr   bool
+	}{
+		{
+			name: "get by email then error",
+			args: args{emails: []string{"test"}, mock: func() {
+				s.mock.ExpectQuery(stmt).
+					WithArgs(user1.Email).
+					WillReturnError(errors.New("error"))
+			}},
+			wantInfos: nil,
+			wantErr:   false,
+		},
+		{
+			name: "get by email then success",
+			args: args{emails: []string{"test"}, mock: func() {
+				s.mock.ExpectQuery(stmt).
+					WithArgs(user1.Email).
+					WillReturnRows(sqlmock.NewRows([]string{"id", "email", "name"}).
+						AddRow(user1.ID, user1.Email, user1.Name))
+			}},
+			wantInfos: []*user.Profile{user1},
+			wantErr:   false,
+		},
+	}
+	for _, tt := range tests {
+		s.T().Run(tt.name, func(t *testing.T) {
+			if tt.args.mock != nil {
+				tt.args.mock()
+			}
+
+			gotInfos, err := s.repo.GetByEmails(contextx.Background(), tt.args.emails)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetByEmails() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(gotInfos, tt.wantInfos) {
+				t.Errorf("GetByEmails() gotInfos = %v, want %v", gotInfos, tt.wantInfos)
 			}
 		})
 	}
