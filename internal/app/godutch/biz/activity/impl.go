@@ -122,8 +122,19 @@ func (i *impl) NewWithMembers(ctx contextx.Contextx, name string, emails []strin
 }
 
 func (i *impl) InviteMembers(ctx contextx.Contextx, id int64, emails []string) (info *event.Activity, err error) {
-	// todo: 2021-09-25|00:29|Sean|impl me
-	panic("implement me")
+	users, err := i.repo.GetByEmails(ctx, emails)
+	if err != nil {
+		i.logger.Error(er.ErrGetUserByEmail.Error(), zap.Error(err), zap.Strings("emails", emails))
+		return nil, er.ErrGetUserByEmail
+	}
+
+	ret, err := i.repo.AddMembers(ctx, id, users)
+	if err != nil {
+		i.logger.Error(er.ErrInviteMembers.Error(), zap.Error(err), zap.Any("users", users))
+		return nil, er.ErrInviteMembers
+	}
+
+	return ret, nil
 }
 
 func (i *impl) ChangeName(ctx contextx.Contextx, id int64, name string) (info *event.Activity, err error) {
