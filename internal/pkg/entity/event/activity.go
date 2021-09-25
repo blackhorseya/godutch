@@ -7,5 +7,6 @@ type Activity struct {
 	ID        int64          `json:"id,omitempty" db:"id"`
 	Name      string         `json:"name,omitempty" db:"name"`
 	Members   []*user.Member `json:"members,omitempty" db:"members"`
+	History   []*Record      `json:"history,omitempty" db:"history"`
 	CreatedAt int64          `json:"created_at,omitempty" db:"created_at"`
 }
