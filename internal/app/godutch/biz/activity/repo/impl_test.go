@@ -21,18 +21,16 @@ var (
 
 	userID1 = int64(1)
 
-	user1 = &user.Profile{
-		ID:    userID1,
+	user1 = &user.Member{
+		Id:    userID1,
 		Email: "test",
 		Name:  "test",
 	}
 
 	act1 = &event.Activity{
 		ID:      id1,
-		OwnerID: userID1,
 		Name:    "test",
-		Owner:   user1,
-		Members: []*user.Profile{user1},
+		Members: []*user.Member{user1},
 	}
 
 	act2 = &event.Activity{
@@ -65,10 +63,18 @@ func TestRepoSuite(t *testing.T) {
 }
 
 func (s *repoSuite) Test_impl_GetByID() {
-	stmt := "SELECT act.id, act.name, act.owner_id, owner.id \"owner.id\", owner.email \"owner.email\", owner.name \"owner.name\", act.created_at FROM activities act JOIN users owner ON owner.id = act.owner_id"
-	stmt1 := `SELECT member.id    AS id,
+	stmt := `
+SELECT 
+       id, 
+       name, 
+       created_at 
+FROM activities
+`
+	stmt1 := `
+SELECT member.id    AS id,
        member.email AS email,
-       member.name  AS name
+       member.name  AS name,
+       map.kind
 FROM activities act
          JOIN activities_users_map map on act.id = map.activity_id
          JOIN users member on map.user_id = member.id`
@@ -109,8 +115,8 @@ FROM activities act
 			args: args{id: id1, userID: userID1, mock: func() {
 				s.mock.ExpectQuery(stmt).
 					WithArgs(id1).
-					WillReturnRows(sqlmock.NewRows([]string{"id", "name", "owner_id", "owner.id", "owner.email", "owner.name", "created_at"}).
-						AddRow(act1.ID, act1.Name, act1.OwnerID, user1.ID, user1.Email, user1.Name, act1.CreatedAt))
+					WillReturnRows(sqlmock.NewRows([]string{"id", "name", "created_at"}).
+						AddRow(act1.ID, act1.Name, act1.CreatedAt))
 				s.mock.ExpectQuery(stmt1).
 					WithArgs(act1.ID).
 					WillReturnError(errors.New("error"))
@@ -123,12 +129,12 @@ FROM activities act
 			args: args{id: id1, userID: userID1, mock: func() {
 				s.mock.ExpectQuery(stmt).
 					WithArgs(id1).
-					WillReturnRows(sqlmock.NewRows([]string{"id", "name", "owner_id", "owner.id", "owner.email", "owner.name", "created_at"}).
-						AddRow(act1.ID, act1.Name, act1.OwnerID, user1.ID, user1.Email, user1.Name, act1.CreatedAt))
+					WillReturnRows(sqlmock.NewRows([]string{"id", "name", "created_at"}).
+						AddRow(act1.ID, act1.Name, act1.CreatedAt))
 				s.mock.ExpectQuery(stmt1).
 					WithArgs(act1.ID).
 					WillReturnRows(sqlmock.NewRows([]string{"id", "email", "name"}).
-						AddRow(user1.ID, user1.Email, user1.Name))
+						AddRow(user1.Id, user1.Email, user1.Name))
 			}},
 			wantInfo: act1,
 			wantErr:  false,
@@ -170,7 +176,7 @@ func (s *repoSuite) Test_impl_Create() {
 			name: "create then error",
 			args: args{created: act1, mock: func() {
 				s.mock.ExpectExec(stmt).
-					WithArgs(act1.ID, act1.Name, act1.OwnerID, act1.CreatedAt).
+					WithArgs(act1.ID, act1.Name, act1.CreatedAt).
 					WillReturnError(errors.New("error"))
 			}},
 			wantInfo: nil,
@@ -180,10 +186,10 @@ func (s *repoSuite) Test_impl_Create() {
 			name: "insert map then error",
 			args: args{created: act1, mock: func() {
 				s.mock.ExpectExec(stmt).
-					WithArgs(act1.ID, act1.Name, act1.OwnerID, act1.CreatedAt).
+					WithArgs(act1.ID, act1.Name, act1.CreatedAt).
 					WillReturnResult(sqlmock.NewResult(1, 1))
 				s.mock.ExpectExec(stmt1).
-					WithArgs(act1.ID, user1.ID).
+					WithArgs(act1.ID, user1.Id, user1.Kind).
 					WillReturnError(errors.New("error"))
 			}},
 			wantInfo: nil,
@@ -193,10 +199,10 @@ func (s *repoSuite) Test_impl_Create() {
 			name: "create then success",
 			args: args{created: act1, mock: func() {
 				s.mock.ExpectExec(stmt).
-					WithArgs(act1.ID, act1.Name, act1.OwnerID, act1.CreatedAt).
+					WithArgs(act1.ID, act1.Name, act1.CreatedAt).
 					WillReturnResult(sqlmock.NewResult(1, 1))
 				s.mock.ExpectExec(stmt1).
-					WithArgs(act1.ID, user1.ID).
+					WithArgs(act1.ID, user1.Id, user1.Kind).
 					WillReturnResult(sqlmock.NewResult(1, 1))
 			}},
 			wantInfo: act1,
@@ -223,17 +229,8 @@ func (s *repoSuite) Test_impl_Create() {
 
 func (s *repoSuite) Test_impl_List() {
 	stmt := `
-SELECT 
-       act.id AS id, 
-       act.name AS name, 
-       act.created_at AS created_at, 
-       owner.id "owner.id",
-       owner.email "owner.email", 
-       owner.name "owner.name", 
-       owner.created_at "owner.created_at" 
-FROM activities act 
-JOIN users owner ON owner.id = act.owner_id`
-
+select act.id, act.name, act.created_at from activities act
+join activities_users_map map on act.id = map.activity_id`
 	stmt1 := `
 SELECT member.id    AS id,
        member.email AS email,
@@ -308,7 +305,8 @@ FROM activities act
 }
 
 func (s *repoSuite) Test_impl_Count() {
-	stmt := `SELECT COUNT(id) "c" FROM activities`
+	stmt := `select count(act.id) from activities act
+join activities_users_map map on act.id = map.activity_id`
 
 	type args struct {
 		userID int64
@@ -410,6 +408,7 @@ func (s *repoSuite) Test_impl_Update() {
 
 func (s *repoSuite) Test_impl_Delete() {
 	stmt := "DELETE FROM activities"
+	stmt1 := "DELETE FROM activities_users_map"
 
 	type args struct {
 		id     int64
@@ -424,14 +423,15 @@ func (s *repoSuite) Test_impl_Delete() {
 		{
 			name: "delete then error",
 			args: args{id: id1, userID: userID1, mock: func() {
-				s.mock.ExpectExec(stmt).WithArgs(id1, userID1).WillReturnError(errors.New("error"))
+				s.mock.ExpectExec(stmt).WithArgs(id1).WillReturnError(errors.New("error"))
 			}},
 			wantErr: true,
 		},
 		{
 			name: "delete then success",
 			args: args{id: id1, userID: userID1, mock: func() {
-				s.mock.ExpectExec(stmt).WithArgs(id1, userID1).WillReturnResult(sqlmock.NewResult(1, 1))
+				s.mock.ExpectExec(stmt).WithArgs(id1).WillReturnResult(sqlmock.NewResult(1, 1))
+				s.mock.ExpectExec(stmt1).WithArgs(act1.ID).WillReturnResult(sqlmock.NewResult(1, 1))
 			}},
 			wantErr: false,
 		},
@@ -454,7 +454,7 @@ func (s *repoSuite) Test_impl_AddMembers() {
 
 	type args struct {
 		id       int64
-		newUsers []*user.Profile
+		newUsers []*user.Member
 		mock     func()
 	}
 	tests := []struct {
@@ -465,9 +465,9 @@ func (s *repoSuite) Test_impl_AddMembers() {
 	}{
 		{
 			name: "add members then error",
-			args: args{id: id1, newUsers: []*user.Profile{user1}, mock: func() {
+			args: args{id: id1, newUsers: []*user.Member{user1}, mock: func() {
 				s.mock.ExpectExec(stmt).
-					WithArgs(act1.ID, user1.ID).
+					WithArgs(act1.ID, user1.Id, user1.Kind).
 					WillReturnError(errors.New("error"))
 			}},
 			wantInfo: nil,
@@ -475,9 +475,9 @@ func (s *repoSuite) Test_impl_AddMembers() {
 		},
 		{
 			name: "add members then success",
-			args: args{id: id1, newUsers: []*user.Profile{user1}, mock: func() {
+			args: args{id: id1, newUsers: []*user.Member{user1}, mock: func() {
 				s.mock.ExpectExec(stmt).
-					WithArgs(act1.ID, user1.ID).
+					WithArgs(act1.ID, user1.Id, user1.Kind).
 					WillReturnResult(sqlmock.NewResult(1, 1))
 			}},
 			wantInfo: nil,
@@ -512,7 +512,7 @@ func (s *repoSuite) Test_impl_GetByEmails() {
 	tests := []struct {
 		name      string
 		args      args
-		wantInfos []*user.Profile
+		wantInfos []*user.Member
 		wantErr   bool
 	}{
 		{
@@ -531,9 +531,9 @@ func (s *repoSuite) Test_impl_GetByEmails() {
 				s.mock.ExpectQuery(stmt).
 					WithArgs(user1.Email).
 					WillReturnRows(sqlmock.NewRows([]string{"id", "email", "name"}).
-						AddRow(user1.ID, user1.Email, user1.Name))
+						AddRow(user1.Id, user1.Email, user1.Name))
 			}},
-			wantInfos: []*user.Profile{user1},
+			wantInfos: []*user.Member{user1},
 			wantErr:   false,
 		},
 	}
