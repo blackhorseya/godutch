@@ -395,3 +395,56 @@ func (s *repoSuite) Test_impl_Delete() {
 		})
 	}
 }
+
+func (s *repoSuite) Test_impl_AddMembers() {
+	stmt := `INSERT INTO activities_users_map`
+
+	type args struct {
+		id       int64
+		newUsers []*user.Profile
+		mock     func()
+	}
+	tests := []struct {
+		name     string
+		args     args
+		wantInfo *event.Activity
+		wantErr  bool
+	}{
+		{
+			name: "add members then error",
+			args: args{id: id1, newUsers: []*user.Profile{user1}, mock: func() {
+				s.mock.ExpectExec(stmt).
+					WithArgs(act1.ID, user1.ID).
+					WillReturnError(errors.New("error"))
+			}},
+			wantInfo: nil,
+			wantErr:  true,
+		},
+		{
+			name: "add members then success",
+			args: args{id: id1, newUsers: []*user.Profile{user1}, mock: func() {
+				s.mock.ExpectExec(stmt).
+					WithArgs(act1.ID, user1.ID).
+					WillReturnResult(sqlmock.NewResult(1, 1))
+			}},
+			wantInfo: nil,
+			wantErr:  false,
+		},
+	}
+	for _, tt := range tests {
+		s.T().Run(tt.name, func(t *testing.T) {
+			if tt.args.mock != nil {
+				tt.args.mock()
+			}
+
+			gotInfo, err := s.repo.AddMembers(contextx.Background(), tt.args.id, tt.args.newUsers)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("AddMembers() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(gotInfo, tt.wantInfo) {
+				t.Errorf("AddMembers() gotInfo = %v, want %v", gotInfo, tt.wantInfo)
+			}
+		})
+	}
+}

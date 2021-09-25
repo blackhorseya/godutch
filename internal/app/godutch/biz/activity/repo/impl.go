@@ -69,8 +69,25 @@ func (i *impl) Create(ctx contextx.Contextx, created *event.Activity) (info *eve
 }
 
 func (i *impl) AddMembers(ctx contextx.Contextx, id int64, newUsers []*user.Profile) (info *event.Activity, err error) {
-	// todo: 2021-09-25|00:30|Sean|impl me
-	panic("implement me")
+	timeout, cancel := contextx.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	type mapping struct {
+		ActivityID int64 `json:"activity_id" db:"activity_id"`
+		UserID     int64 `json:"user_id" db:"user_id"`
+	}
+	var members []*mapping
+	for _, newUser := range newUsers {
+		members = append(members, &mapping{ActivityID: id, UserID: newUser.ID})
+	}
+
+	stmt := `INSERT INTO activities_users_map (activity_id, user_id) VALUES (:activity_id, :user_id)`
+	_, err = i.rw.NamedExecContext(timeout, stmt, members)
+	if err != nil {
+		return nil, err
+	}
+
+	return nil, nil
 }
 
 func (i *impl) List(ctx contextx.Contextx, userID int64, limit, offset int) (infos []*event.Activity, err error) {
