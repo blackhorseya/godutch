@@ -466,3 +466,56 @@ func (s *repoSuite) Test_impl_AddMembers() {
 		})
 	}
 }
+
+func (s *repoSuite) Test_impl_GetByEmails() {
+	stmt := "SELECT id, email, name FROM users"
+
+	type args struct {
+		emails []string
+		mock   func()
+	}
+	tests := []struct {
+		name      string
+		args      args
+		wantInfos []*user.Profile
+		wantErr   bool
+	}{
+		{
+			name: "get by email then error",
+			args: args{emails: []string{"test"}, mock: func() {
+				s.mock.ExpectQuery(stmt).
+					WithArgs(user1.Email).
+					WillReturnError(errors.New("error"))
+			}},
+			wantInfos: nil,
+			wantErr:   false,
+		},
+		{
+			name: "get by email then success",
+			args: args{emails: []string{"test"}, mock: func() {
+				s.mock.ExpectQuery(stmt).
+					WithArgs(user1.Email).
+					WillReturnRows(sqlmock.NewRows([]string{"id", "email", "name"}).
+						AddRow(user1.ID, user1.Email, user1.Name))
+			}},
+			wantInfos: []*user.Profile{user1},
+			wantErr:   false,
+		},
+	}
+	for _, tt := range tests {
+		s.T().Run(tt.name, func(t *testing.T) {
+			if tt.args.mock != nil {
+				tt.args.mock()
+			}
+
+			gotInfos, err := s.repo.GetByEmails(contextx.Background(), tt.args.emails)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetByEmails() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(gotInfos, tt.wantInfos) {
+				t.Errorf("GetByEmails() gotInfos = %v, want %v", gotInfos, tt.wantInfos)
+			}
+		})
+	}
+}

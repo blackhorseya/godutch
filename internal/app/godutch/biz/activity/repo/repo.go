@@ -12,6 +12,9 @@ type IRepo interface {
 	// GetByID serve caller to get an activity by id
 	GetByID(ctx contextx.Contextx, id, userID int64) (info *event.Activity, err error)
 
+	// GetByEmails serve caller to given emails to get users information
+	GetByEmails(ctx contextx.Contextx, emails []string) (infos []*user.Profile, err error)
+
 	// Create an activity with name and members
 	Create(ctx contextx.Contextx, created *event.Activity) (info *event.Activity, err error)
 

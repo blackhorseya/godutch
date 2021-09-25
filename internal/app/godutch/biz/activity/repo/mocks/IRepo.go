@@ -97,6 +97,29 @@ func (_m *IRepo) Delete(ctx contextx.Contextx, id int64, userID int64) error {
 	return r0
 }
 
+// GetByEmails provides a mock function with given fields: ctx, emails
+func (_m *IRepo) GetByEmails(ctx contextx.Contextx, emails []string) ([]*user.Profile, error) {
+	ret := _m.Called(ctx, emails)
+
+	var r0 []*user.Profile
+	if rf, ok := ret.Get(0).(func(contextx.Contextx, []string) []*user.Profile); ok {
+		r0 = rf(ctx, emails)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*user.Profile)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(contextx.Contextx, []string) error); ok {
+		r1 = rf(ctx, emails)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetByID provides a mock function with given fields: ctx, id, userID
 func (_m *IRepo) GetByID(ctx contextx.Contextx, id int64, userID int64) (*event.Activity, error) {
 	ret := _m.Called(ctx, id, userID)

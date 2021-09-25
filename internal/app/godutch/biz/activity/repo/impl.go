@@ -53,6 +53,25 @@ WHERE act.id = ?`
 	return &ret, nil
 }
 
+func (i *impl) GetByEmails(ctx contextx.Contextx, emails []string) (infos []*user.Profile, err error) {
+	timeout, cancel := contextx.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	var users []*user.Profile
+	for _, email := range emails {
+		profile := user.Profile{}
+		stmt := `SELECT id, email, name FROM users WHERE email = ?`
+		err := i.rw.GetContext(timeout, &profile, stmt, email)
+		if err != nil {
+			continue
+		}
+
+		users = append(users, &profile)
+	}
+
+	return users, nil
+}
+
 func (i *impl) Create(ctx contextx.Contextx, created *event.Activity) (info *event.Activity, err error) {
 	timeout, cancel := contextx.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
