@@ -66,6 +66,12 @@ func TestRepoSuite(t *testing.T) {
 
 func (s *repoSuite) Test_impl_GetByID() {
 	stmt := "SELECT act.id, act.name, act.owner_id, owner.id \"owner.id\", owner.email \"owner.email\", owner.name \"owner.name\", act.created_at FROM activities act JOIN users owner ON owner.id = act.owner_id"
+	stmt1 := `SELECT member.id    AS id,
+       member.email AS email,
+       member.name  AS name
+FROM activities act
+         JOIN activities_users_map map on act.id = map.activity_id
+         JOIN users member on map.user_id = member.id`
 
 	type args struct {
 		id     int64
@@ -99,12 +105,30 @@ func (s *repoSuite) Test_impl_GetByID() {
 			wantErr:  false,
 		},
 		{
+			name: "get members then error",
+			args: args{id: id1, userID: userID1, mock: func() {
+				s.mock.ExpectQuery(stmt).
+					WithArgs(id1).
+					WillReturnRows(sqlmock.NewRows([]string{"id", "name", "owner_id", "owner.id", "owner.email", "owner.name", "created_at"}).
+						AddRow(act1.ID, act1.Name, act1.OwnerID, user1.ID, user1.Email, user1.Name, act1.CreatedAt))
+				s.mock.ExpectQuery(stmt1).
+					WithArgs(act1.ID).
+					WillReturnError(errors.New("error"))
+			}},
+			wantInfo: nil,
+			wantErr:  true,
+		},
+		{
 			name: "get by id then success",
 			args: args{id: id1, userID: userID1, mock: func() {
 				s.mock.ExpectQuery(stmt).
 					WithArgs(id1).
 					WillReturnRows(sqlmock.NewRows([]string{"id", "name", "owner_id", "owner.id", "owner.email", "owner.name", "created_at"}).
 						AddRow(act1.ID, act1.Name, act1.OwnerID, user1.ID, user1.Email, user1.Name, act1.CreatedAt))
+				s.mock.ExpectQuery(stmt1).
+					WithArgs(act1.ID).
+					WillReturnRows(sqlmock.NewRows([]string{"id", "email", "name"}).
+						AddRow(user1.ID, user1.Email, user1.Name))
 			}},
 			wantInfo: act1,
 			wantErr:  false,
