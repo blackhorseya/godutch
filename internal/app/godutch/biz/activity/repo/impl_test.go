@@ -32,6 +32,7 @@ var (
 		OwnerID: userID1,
 		Name:    "test",
 		Owner:   user1,
+		Members: []*user.Profile{user1},
 	}
 
 	act2 = &event.Activity{
@@ -129,6 +130,7 @@ func (s *repoSuite) Test_impl_GetByID() {
 
 func (s *repoSuite) Test_impl_Create() {
 	stmt := "INSERT INTO activities"
+	stmt1 := "INSERT INTO activities_users_map"
 
 	type args struct {
 		created *event.Activity
@@ -151,10 +153,26 @@ func (s *repoSuite) Test_impl_Create() {
 			wantErr:  true,
 		},
 		{
+			name: "insert map then error",
+			args: args{created: act1, mock: func() {
+				s.mock.ExpectExec(stmt).
+					WithArgs(act1.ID, act1.Name, act1.OwnerID, act1.CreatedAt).
+					WillReturnResult(sqlmock.NewResult(1, 1))
+				s.mock.ExpectExec(stmt1).
+					WithArgs(act1.ID, user1.ID).
+					WillReturnError(errors.New("error"))
+			}},
+			wantInfo: nil,
+			wantErr:  true,
+		},
+		{
 			name: "create then success",
 			args: args{created: act1, mock: func() {
 				s.mock.ExpectExec(stmt).
 					WithArgs(act1.ID, act1.Name, act1.OwnerID, act1.CreatedAt).
+					WillReturnResult(sqlmock.NewResult(1, 1))
+				s.mock.ExpectExec(stmt1).
+					WithArgs(act1.ID, user1.ID).
 					WillReturnResult(sqlmock.NewResult(1, 1))
 			}},
 			wantInfo: act1,

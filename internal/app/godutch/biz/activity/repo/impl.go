@@ -63,7 +63,19 @@ func (i *impl) Create(ctx contextx.Contextx, created *event.Activity) (info *eve
 		return nil, err
 	}
 
-	// todo: 2021-09-25|11:55|Sean|insert members into map
+	type mapping struct {
+		ActivityID int64 `json:"activity_id" db:"activity_id"`
+		UserID     int64 `json:"user_id" db:"user_id"`
+	}
+	var members []*mapping
+	for _, member := range created.Members {
+		members = append(members, &mapping{ActivityID: created.ID, UserID: member.ID})
+	}
+	stmt = `INSERT INTO activities_users_map (activity_id, user_id) VALUES (:activity_id, :user_id)`
+	_, err = i.rw.NamedExecContext(timeout, stmt, members)
+	if err != nil {
+		return nil, err
+	}
 
 	return created, nil
 }
