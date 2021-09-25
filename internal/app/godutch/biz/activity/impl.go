@@ -100,6 +100,12 @@ func (i *impl) NewWithMembers(ctx contextx.Contextx, name string, emails []strin
 		return nil, er.ErrEmptyName
 	}
 
+	members, err := i.repo.GetByEmails(ctx, emails)
+	if err != nil {
+		i.logger.Error(er.ErrGetUserByEmail.Error(), zap.Error(err), zap.Strings("emails", emails))
+		return nil, er.ErrGetUserByEmail
+	}
+
 	created := &event.Activity{
 		ID:      i.node.Generate().Int64() / 1000 * 1000,
 		Name:    name,
@@ -110,6 +116,7 @@ func (i *impl) NewWithMembers(ctx contextx.Contextx, name string, emails []strin
 			Name:      profile.Name,
 			CreatedAt: profile.CreatedAt,
 		},
+		Members:   members,
 		CreatedAt: time.Now().Unix(),
 	}
 	ret, err := i.repo.Create(ctx, created)

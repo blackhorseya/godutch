@@ -387,8 +387,17 @@ func (s *bizSuite) Test_impl_NewWithMembers() {
 			wantErr:  true,
 		},
 		{
+			name: "get by emails then error",
+			args: args{name: "test", email: []string{"test"}, ctx: ctx1, mock: func() {
+				s.mock.On("GetByEmails", mock.Anything, []string{"test"}).Return(nil, errors.New("error")).Once()
+			}},
+			wantInfo: nil,
+			wantErr:  true,
+		},
+		{
 			name: "new an act then error",
 			args: args{name: "test", email: []string{"test"}, ctx: ctx1, mock: func() {
+				s.mock.On("GetByEmails", mock.Anything, []string{"test"}).Return([]*user.Profile{user1}, nil).Once()
 				s.mock.On("Create", mock.Anything, mock.Anything).Return(nil, errors.New("error")).Once()
 			}},
 			wantInfo: nil,
@@ -397,6 +406,7 @@ func (s *bizSuite) Test_impl_NewWithMembers() {
 		{
 			name: "new an act then success",
 			args: args{name: "test", email: []string{"test"}, ctx: ctx1, mock: func() {
+				s.mock.On("GetByEmails", mock.Anything, []string{"test"}).Return([]*user.Profile{user1}, nil).Once()
 				s.mock.On("Create", mock.Anything, mock.Anything).Return(act1, nil).Once()
 			}},
 			wantInfo: act1,
