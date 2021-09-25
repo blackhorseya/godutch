@@ -1,0 +1,10 @@
+syntax = "proto3";
+package user;
+option go_package = "./user;user";
+
+message Member {
+  int64 id = 1;
+  string email = 2;
+  string name = 3;
+  int64 spend = 4;
+}
