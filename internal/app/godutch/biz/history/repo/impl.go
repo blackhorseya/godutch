@@ -49,8 +49,29 @@ order by detail.value desc limit 1`
 }
 
 func (i *impl) List(ctx contextx.Contextx, actID int64, limit, offset int) (infos []*event.Record, err error) {
-	// todo: 2021-09-26|03:00|Sean|impl me
-	panic("implement me")
+	timeout, cancel := contextx.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	var ret []*event.Record
+	stmt := `
+select h.id       as id,
+       h.remark   as remark,
+       h.total    as total,
+       user.id    as "payer.id",
+       user.email as "payer.email",
+       user.name  as "payer.name",
+       h.created_at
+from spend_history h
+         join users user on h.payer_id = user.id
+where h.activity_id = ?
+order by h.created_at desc
+limit ? offset ?`
+	err = i.rw.SelectContext(timeout, &ret, stmt, actID, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+
+	return ret, nil
 }
 
 func (i *impl) Create(ctx contextx.Contextx, created *event.Record) (info *event.Record, err error) {

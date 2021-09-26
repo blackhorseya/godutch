@@ -4,6 +4,7 @@ create table if not exists spend_history
     activity_id bigint not null,
     payer_id    bigint not null,
     remark      text   not null,
+    total       int    not null,
     created_at  bigint not null,
     constraint spend_history_pk
         primary key (id)

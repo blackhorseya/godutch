@@ -17,6 +17,8 @@ import (
 var (
 	id1 = int64(1)
 
+	actID1 = int64(1)
+
 	userID1 = int64(1)
 
 	user1 = &user.Member{Id: userID1}
@@ -102,6 +104,67 @@ from spend_history h
 			}
 			if !reflect.DeepEqual(gotInfo, tt.wantInfo) {
 				t.Errorf("GetByID() gotInfo = %v, want %v", gotInfo, tt.wantInfo)
+			}
+		})
+	}
+}
+
+func (s *repoSuite) Test_impl_List() {
+	stmt := `
+select h.id       as id,
+       h.remark   as remark,
+       h.total    as total,
+       user.id    as "payer.id",
+       user.email as "payer.email",
+       user.name  as "payer.name",
+       h.created_at
+from spend_history h
+         join users user on h.payer_id = user.id`
+
+	type args struct {
+		actID  int64
+		limit  int
+		offset int
+		mock   func()
+	}
+	tests := []struct {
+		name      string
+		args      args
+		wantInfos []*event.Record
+		wantErr   bool
+	}{
+		{
+			name: "list return error",
+			args: args{actID: actID1, limit: 10, offset: 0, mock: func() {
+				s.mock.ExpectQuery(stmt).WithArgs(actID1, 10, 0).WillReturnError(errors.New("error"))
+			}},
+			wantInfos: nil,
+			wantErr:   true,
+		},
+		{
+			name: "list return success",
+			args: args{actID: actID1, limit: 10, offset: 0, mock: func() {
+				s.mock.ExpectQuery(stmt).WithArgs(actID1, 10, 0).
+					WillReturnRows(sqlmock.NewRows([]string{"id", "remark", "total", "payer.id", "payer.email", "payer.name", "created_at"}).
+						AddRow(record1.ID, record1.Remark, record1.Total, record1.Payer.Id, record1.Payer.Email, record1.Payer.Name, record1.CreatedAt))
+			}},
+			wantInfos: []*event.Record{record1},
+			wantErr:   false,
+		},
+	}
+	for _, tt := range tests {
+		s.T().Run(tt.name, func(t *testing.T) {
+			if tt.args.mock != nil {
+				tt.args.mock()
+			}
+
+			gotInfos, err := s.repo.List(contextx.Background(), tt.args.actID, tt.args.limit, tt.args.offset)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("List() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(gotInfos, tt.wantInfos) {
+				t.Errorf("List() gotInfos = %v, want %v", gotInfos, tt.wantInfos)
 			}
 		})
 	}
