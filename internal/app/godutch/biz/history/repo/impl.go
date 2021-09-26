@@ -95,6 +95,20 @@ func (i *impl) Create(ctx contextx.Contextx, created *event.Record) (info *event
 }
 
 func (i *impl) Delete(ctx contextx.Contextx, id int64) error {
-	// todo: 2021-09-26|03:00|Sean|impl me
-	panic("implement me")
+	timeout, cancel := contextx.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	stmt := `delete from spend_history where id = ?`
+	_, err := i.rw.ExecContext(timeout, stmt, id)
+	if err != nil {
+		return err
+	}
+
+	stmt1 := `delete from spend_details where spend_id = ?`
+	_, err = i.rw.ExecContext(timeout, stmt1, id)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

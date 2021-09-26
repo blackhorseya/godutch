@@ -193,3 +193,38 @@ from spend_history h
 		})
 	}
 }
+
+func (s *repoSuite) Test_impl_Delete() {
+	stmt := `delete from spend_history`
+	stmt1 := `delete from spend_details`
+
+	type args struct {
+		id   int64
+		mock func()
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "delete then success",
+			args: args{id: id1, mock: func() {
+				s.mock.ExpectExec(stmt).WithArgs(id1).WillReturnResult(sqlmock.NewResult(1, 1))
+				s.mock.ExpectExec(stmt1).WithArgs(id1).WillReturnResult(sqlmock.NewResult(1, 1))
+			}},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		s.T().Run(tt.name, func(t *testing.T) {
+			if tt.args.mock != nil {
+				tt.args.mock()
+			}
+
+			if err := s.repo.Delete(contextx.Background(), tt.args.id); (err != nil) != tt.wantErr {
+				t.Errorf("Delete() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
