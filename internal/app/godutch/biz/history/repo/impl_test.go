@@ -28,6 +28,11 @@ var (
 		Payer:   user1,
 		Members: []*user.Member{user1},
 	}
+
+	record2 = &event.Record{
+		ID:      id1,
+		Payer:   user1,
+	}
 )
 
 type repoSuite struct {
@@ -172,7 +177,7 @@ from spend_history h
 					WillReturnRows(sqlmock.NewRows([]string{"id", "remark", "total", "payer.id", "payer.email", "payer.name", "created_at"}).
 						AddRow(record1.ID, record1.Remark, record1.Total, record1.Payer.Id, record1.Payer.Email, record1.Payer.Name, record1.CreatedAt))
 			}},
-			wantInfos: []*event.Record{record1},
+			wantInfos: []*event.Record{record2},
 			wantErr:   false,
 		},
 	}
