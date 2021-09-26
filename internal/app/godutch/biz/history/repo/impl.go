@@ -90,8 +90,32 @@ limit ? offset ?`
 }
 
 func (i *impl) Create(ctx contextx.Contextx, created *event.Record) (info *event.Record, err error) {
-	// todo: 2021-09-26|03:00|Sean|impl me
-	panic("implement me")
+	timeout, cancel := contextx.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	stmt := `insert into spend_history (id, activity_id, payer_id, remark, total, created_at) 
+values (:id, :activity.id, :payer.id, :remark, :total, :created_at)`
+	_, err = i.rw.NamedExecContext(timeout, stmt, created)
+	if err != nil {
+		return nil, err
+	}
+
+	type detail struct {
+		SpendID int64 `json:"spend_id" db:"spend_id"`
+		UserID  int64 `json:"user_id" db:"user_id"`
+		Value   int64 `json:"value" db:"value"`
+	}
+	var details []*detail
+	for _, member := range created.Members {
+		details = append(details, &detail{SpendID: created.ID, UserID: member.Id, Value: member.Value})
+	}
+	stmt1 := `insert into spend_details (spend_id, user_id, value) values (:spend_id, :user_id, :value)`
+	_, err = i.rw.NamedExecContext(timeout, stmt1, details)
+	if err != nil {
+		return nil, err
+	}
+
+	return created, nil
 }
 
 func (i *impl) Delete(ctx contextx.Contextx, id int64) error {

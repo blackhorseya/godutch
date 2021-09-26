@@ -228,3 +228,72 @@ func (s *repoSuite) Test_impl_Delete() {
 		})
 	}
 }
+
+func (s *repoSuite) Test_impl_Create() {
+	stmt := `insert into spend_history`
+	stmt1 := `insert into spend_details`
+
+	type args struct {
+		created *event.Record
+		mock    func()
+	}
+	tests := []struct {
+		name     string
+		args     args
+		wantInfo *event.Record
+		wantErr  bool
+	}{
+		{
+			name: "insert spend history then error",
+			args: args{created: record1, mock: func() {
+				s.mock.ExpectExec(stmt).
+					WithArgs(record1.ID, record1.Activity.ID, record1.Payer.Id, record1.Remark, record1.Total, record1.CreatedAt).
+					WillReturnError(errors.New("error"))
+			}},
+			wantInfo: nil,
+			wantErr:  true,
+		},
+		{
+			name: "insert spend details then error",
+			args: args{created: record1, mock: func() {
+				s.mock.ExpectExec(stmt).
+					WithArgs(record1.ID, record1.Activity.ID, record1.Payer.Id, record1.Remark, record1.Total, record1.CreatedAt).
+					WillReturnResult(sqlmock.NewResult(1, 1))
+				s.mock.ExpectExec(stmt1).
+					WithArgs(record1.ID, record1.Members[0].Id, record1.Members[0].Value).
+					WillReturnError(errors.New("error"))
+			}},
+			wantInfo: nil,
+			wantErr:  true,
+		},
+		{
+			name: "insert then success",
+			args: args{created: record1, mock: func() {
+				s.mock.ExpectExec(stmt).
+					WithArgs(record1.ID, record1.Activity.ID, record1.Payer.Id, record1.Remark, record1.Total, record1.CreatedAt).
+					WillReturnResult(sqlmock.NewResult(1, 1))
+				s.mock.ExpectExec(stmt1).
+					WithArgs(record1.ID, record1.Members[0].Id, record1.Members[0].Value).
+					WillReturnResult(sqlmock.NewResult(1, 1))
+			}},
+			wantInfo: record1,
+			wantErr:  false,
+		},
+	}
+	for _, tt := range tests {
+		s.T().Run(tt.name, func(t *testing.T) {
+			if tt.args.mock != nil {
+				tt.args.mock()
+			}
+
+			gotInfo, err := s.repo.Create(contextx.Background(), tt.args.created)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Create() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(gotInfo, tt.wantInfo) {
+				t.Errorf("Create() gotInfo = %v, want %v", gotInfo, tt.wantInfo)
+			}
+		})
+	}
+}
