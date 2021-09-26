@@ -8,4 +8,7 @@ var (
 
 	// ErrActivityNotExists means activity not exists
 	ErrActivityNotExists = newAPPError(http.StatusNotFound, 40401, "activity not exists")
+
+	// ErrRecordNotExists means record not exists
+	ErrRecordNotExists = newAPPError(http.StatusNotFound, 40402, "record not exists")
 )

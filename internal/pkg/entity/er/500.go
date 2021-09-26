@@ -63,6 +63,11 @@ var (
 )
 
 var (
+	// ErrGetRecordByID means Get spend record details is failure
+	ErrGetRecordByID = newAPPError(http.StatusInternalServerError, 50030, "Get spend record details is failure")
+)
+
+var (
 	// ErrDBConnect means db connect is failure
 	ErrDBConnect = newAPPError(http.StatusInternalServerError, 50001, "db connect is failure")
 
