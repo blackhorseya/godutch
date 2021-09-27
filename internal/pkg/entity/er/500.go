@@ -71,6 +71,9 @@ var (
 
 	// ErrDeleteRecord means delete record by id is failure
 	ErrDeleteRecord = newAPPError(http.StatusInternalServerError, 50032, "delete record by id is failure")
+
+	// ErrNewRecord means create a new record is failure
+	ErrNewRecord = newAPPError(http.StatusInternalServerError, 50033, "create a new record is failure")
 )
 
 var (

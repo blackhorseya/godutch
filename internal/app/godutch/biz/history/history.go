@@ -4,6 +4,7 @@ import (
 	"github.com/blackhorseya/godutch/internal/app/godutch/biz/history/repo"
 	"github.com/blackhorseya/godutch/internal/pkg/base/contextx"
 	"github.com/blackhorseya/godutch/internal/pkg/entity/event"
+	"github.com/blackhorseya/godutch/internal/pkg/entity/user"
 	"github.com/google/wire"
 )
 
@@ -16,11 +17,11 @@ type IBiz interface {
 	List(ctx contextx.Contextx, actID int64, page, size int) (infos []*event.Record, err error)
 
 	// NewRecord serve caller to create a new record into spend history
-	NewRecord(ctx contextx.Contextx, created *event.Record) (info *event.Record, err error)
+	NewRecord(ctx contextx.Contextx, actID, payerID int64, remark string, members []*user.Member, total int) (info *event.Record, err error)
 
 	// Delete serve caller to delete a record by id
 	Delete(ctx contextx.Contextx, id, actID int64) error
 }
 
 // ProviderSet is a provider set for wire
-var ProviderSet = wire.NewSet(repo.ProviderSet)
+var ProviderSet = wire.NewSet(NewImpl, repo.ProviderSet)

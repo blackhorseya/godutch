@@ -219,3 +219,72 @@ func (s *bizSuite) Test_impl_Delete() {
 		})
 	}
 }
+
+func (s *bizSuite) Test_impl_NewRecord() {
+	type args struct {
+		ctx     contextx.Contextx
+		actID   int64
+		payerID int64
+		remark  string
+		members []*user.Member
+		total   int
+		mock    func()
+	}
+	tests := []struct {
+		name     string
+		args     args
+		wantInfo *event.Record
+		wantErr  bool
+	}{
+		{
+			name:     "missing remark then error",
+			args:     args{ctx: ctx1, actID: id1, payerID: userID1, remark: "", members: []*user.Member{member1}, total: 1000},
+			wantInfo: nil,
+			wantErr:  true,
+		},
+		{
+			name:     "missing payer then error",
+			args:     args{ctx: ctx1, actID: id1, payerID: 0, remark: "test", members: []*user.Member{member1}, total: 1000},
+			wantInfo: nil,
+			wantErr:  true,
+		},
+		{
+			name:     "missing total then error",
+			args:     args{ctx: ctx1, actID: id1, payerID: userID1, remark: "test", members: []*user.Member{member1}, total: 0},
+			wantInfo: nil,
+			wantErr:  true,
+		},
+		{
+			name: "new record then error",
+			args: args{ctx: ctx1, actID: id1, payerID: userID1, remark: "test", members: []*user.Member{member1}, total: 1000, mock: func() {
+				s.mock.On("Create", mock.Anything, mock.Anything).Return(nil, errors.New("error")).Once()
+			}},
+			wantInfo: nil,
+			wantErr:  true,
+		},
+		{
+			name: "new record then success",
+			args: args{ctx: ctx1, actID: id1, payerID: userID1, remark: "test", members: []*user.Member{member1}, total: 1000, mock: func() {
+				s.mock.On("Create", mock.Anything, mock.Anything).Return(record1, nil).Once()
+			}},
+			wantInfo: record1,
+			wantErr:  false,
+		},
+	}
+	for _, tt := range tests {
+		s.T().Run(tt.name, func(t *testing.T) {
+			if tt.args.mock != nil {
+				tt.args.mock()
+			}
+
+			gotInfo, err := s.biz.NewRecord(tt.args.ctx, tt.args.actID, tt.args.payerID, tt.args.remark, tt.args.members, tt.args.total)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("NewRecord() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(gotInfo, tt.wantInfo) {
+				t.Errorf("NewRecord() gotInfo = %v, want %v", gotInfo, tt.wantInfo)
+			}
+		})
+	}
+}

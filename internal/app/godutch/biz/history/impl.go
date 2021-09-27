@@ -1,10 +1,13 @@
 package history
 
 import (
+	"time"
+
 	"github.com/blackhorseya/godutch/internal/app/godutch/biz/history/repo"
 	"github.com/blackhorseya/godutch/internal/pkg/base/contextx"
 	"github.com/blackhorseya/godutch/internal/pkg/entity/er"
 	"github.com/blackhorseya/godutch/internal/pkg/entity/event"
+	"github.com/blackhorseya/godutch/internal/pkg/entity/user"
 	"github.com/bwmarrin/snowflake"
 	"go.uber.org/zap"
 )
@@ -54,7 +57,7 @@ func (i *impl) List(ctx contextx.Contextx, actID int64, page, size int) (infos [
 		i.logger.Error(er.ErrListRecords.Error(), zap.Error(err), zap.Int64("act_id", actID), zap.Int("page", page), zap.Int("size", size))
 		return nil, er.ErrListRecords
 	}
-	if len(ret)  == 0 {
+	if len(ret) == 0 {
 		i.logger.Error(er.ErrRecordNotExists.Error(), zap.Int64("act_id", actID), zap.Int("page", page), zap.Int("size", size))
 		return nil, er.ErrRecordNotExists
 	}
@@ -62,9 +65,38 @@ func (i *impl) List(ctx contextx.Contextx, actID int64, page, size int) (infos [
 	return ret, nil
 }
 
-func (i *impl) NewRecord(ctx contextx.Contextx, created *event.Record) (info *event.Record, err error) {
-	// todo: 2021-09-26|20:20|Sean|impl me
-	panic("implement me")
+func (i *impl) NewRecord(ctx contextx.Contextx, actID, payerID int64, remark string, members []*user.Member, total int) (info *event.Record, err error) {
+	if len(remark) == 0 {
+		i.logger.Error(er.ErrEmptyRemark.Error())
+		return nil, er.ErrEmptyRemark
+	}
+
+	if payerID == 0 {
+		i.logger.Error(er.ErrMissingPayerID.Error())
+		return nil, er.ErrMissingPayerID
+	}
+
+	if total == 0 {
+		i.logger.Error(er.ErrMissingTotal.Error())
+		return nil, er.ErrMissingTotal
+	}
+
+	created := &event.Record{
+		ID:        i.node.Generate().Int64() / 1000 * 1000,
+		Activity:  &event.Activity{ID: actID},
+		Remark:    remark,
+		Payer:     &user.Member{Id: payerID},
+		Members:   members,
+		Total:     total,
+		CreatedAt: time.Now().Unix(),
+	}
+	ret, err := i.repo.Create(ctx, created)
+	if err != nil {
+		i.logger.Error(er.ErrNewRecord.Error(), zap.Error(err), zap.Any("created", created))
+		return nil, er.ErrNewRecord
+	}
+
+	return ret, nil
 }
 
 func (i *impl) Delete(ctx contextx.Contextx, id, actID int64) error {

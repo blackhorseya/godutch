@@ -23,4 +23,13 @@ var (
 
 	// ErrUserEmailExists means user email is exists
 	ErrUserEmailExists = newAPPError(http.StatusBadRequest, 40006, "user email is exists")
+
+	// ErrEmptyRemark means remark must be NOT empty
+	ErrEmptyRemark = newAPPError(http.StatusBadRequest, 40007, "remark must be NOT empty")
+
+	// ErrMissingPayerID means missing payer id
+	ErrMissingPayerID = newAPPError(http.StatusBadRequest, 40008, "missing payer id")
+
+	// ErrMissingTotal means missing total value
+	ErrMissingTotal = newAPPError(http.StatusBadRequest, 40009, "missing total value")
 )
