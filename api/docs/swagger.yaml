@@ -29,16 +29,37 @@ definitions:
     properties:
       created_at:
         type: integer
+      history:
+        items:
+          $ref: '#/definitions/event.Record'
+        type: array
       id:
         type: integer
       members:
         items:
-          $ref: '#/definitions/user.Profile'
+          $ref: '#/definitions/user.Member'
         type: array
       name:
         type: string
-      owner:
-        $ref: '#/definitions/user.Profile'
+    type: object
+  event.Record:
+    properties:
+      activity:
+        $ref: '#/definitions/event.Activity'
+      created_at:
+        type: integer
+      id:
+        type: integer
+      members:
+        items:
+          $ref: '#/definitions/user.Member'
+        type: array
+      payer:
+        $ref: '#/definitions/user.Member'
+      remark:
+        type: string
+      total:
+        type: integer
     type: object
   response.Response:
     properties:
@@ -48,6 +69,21 @@ definitions:
         type: object
       msg:
         type: string
+    type: object
+  user.Member:
+    properties:
+      balance:
+        type: integer
+      email:
+        type: string
+      id:
+        type: integer
+      kind:
+        type: integer
+      name:
+        type: string
+      value:
+        type: integer
     type: object
   user.Profile:
     properties:

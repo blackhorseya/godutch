@@ -681,20 +681,52 @@ var doc = `{
                 "created_at": {
                     "type": "integer"
                 },
+                "history": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/event.Record"
+                    }
+                },
                 "id": {
                     "type": "integer"
                 },
                 "members": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/user.Profile"
+                        "$ref": "#/definitions/user.Member"
                     }
                 },
                 "name": {
                     "type": "string"
+                }
+            }
+        },
+        "event.Record": {
+            "type": "object",
+            "properties": {
+                "activity": {
+                    "$ref": "#/definitions/event.Activity"
                 },
-                "owner": {
-                    "$ref": "#/definitions/user.Profile"
+                "created_at": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "members": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/user.Member"
+                    }
+                },
+                "payer": {
+                    "$ref": "#/definitions/user.Member"
+                },
+                "remark": {
+                    "type": "string"
+                },
+                "total": {
+                    "type": "integer"
                 }
             }
         },
@@ -709,6 +741,29 @@ var doc = `{
                 },
                 "msg": {
                     "type": "string"
+                }
+            }
+        },
+        "user.Member": {
+            "type": "object",
+            "properties": {
+                "balance": {
+                    "type": "integer"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "kind": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "integer"
                 }
             }
         },
