@@ -21,4 +21,4 @@ type IHandler interface {
 }
 
 // ProviderSet is provider set for wire
-var ProviderSet = wire.NewSet()
+var ProviderSet = wire.NewSet(NewImpl)
