@@ -61,6 +61,34 @@ definitions:
       total:
         type: integer
     type: object
+  history.member:
+    properties:
+      id:
+        type: integer
+      value:
+        type: integer
+    required:
+    - id
+    - value
+    type: object
+  history.reqNew:
+    properties:
+      members:
+        items:
+          $ref: '#/definitions/history.member'
+        type: array
+      payer_id:
+        type: integer
+      remark:
+        type: string
+      total:
+        type: integer
+    required:
+    - members
+    - payer_id
+    - remark
+    - total
+    type: object
   response.Response:
     properties:
       code:
@@ -343,6 +371,179 @@ paths:
       summary: Update an activity of name by id
       tags:
       - Activities
+  /v1/activities/{id}/records:
+    get:
+      consumes:
+      - application/json
+      description: List all records of activity
+      parameters:
+      - description: ID of activity
+        in: path
+        name: id
+        required: true
+        type: integer
+      - default: 1
+        description: page
+        in: query
+        name: page
+        type: integer
+      - default: 5
+        description: size of page
+        in: query
+        name: size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/event.Record'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/er.APPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/er.APPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/er.APPError'
+      security:
+      - ApiKeyAuth: []
+      summary: List all records of activity
+      tags:
+      - History
+    post:
+      consumes:
+      - application/json
+      description: Create a record
+      parameters:
+      - description: ID of activity
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: created record
+        in: body
+        name: created
+        required: true
+        schema:
+          $ref: '#/definitions/history.reqNew'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/event.Record'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/er.APPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/er.APPError'
+      security:
+      - ApiKeyAuth: []
+      summary: Create a record
+      tags:
+      - History
+  /v1/activities/{id}/records/{record_id}:
+    delete:
+      consumes:
+      - application/json
+      description: Remove a record by id
+      parameters:
+      - description: ID of activity
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: ID of record
+        in: path
+        name: record_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/er.APPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/er.APPError'
+      security:
+      - ApiKeyAuth: []
+      summary: Remove a record by id
+      tags:
+      - History
+    get:
+      consumes:
+      - application/json
+      description: Get a spend record by id
+      parameters:
+      - description: ID of activity
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: ID of record
+        in: path
+        name: record_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/event.Record'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/er.APPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/er.APPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/er.APPError'
+      security:
+      - ApiKeyAuth: []
+      summary: Get a spend record by id
+      tags:
+      - History
   /v1/auth/login:
     post:
       consumes:
