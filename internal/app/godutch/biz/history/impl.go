@@ -68,6 +68,11 @@ func (i *impl) NewRecord(ctx contextx.Contextx, created *event.Record) (info *ev
 }
 
 func (i *impl) Delete(ctx contextx.Contextx, id, actID int64) error {
-	// todo: 2021-09-26|20:20|Sean|impl me
-	panic("implement me")
+	err := i.repo.Delete(ctx, id)
+	if err != nil {
+		i.logger.Error(er.ErrDeleteRecord.Error(), zap.Error(err), zap.Int64("id", id))
+		return er.ErrDeleteRecord
+	}
+
+	return nil
 }

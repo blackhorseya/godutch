@@ -68,6 +68,9 @@ var (
 
 	// ErrListRecords means list all records is failure
 	ErrListRecords = newAPPError(http.StatusInternalServerError, 50031, "list all records is failure")
+
+	// ErrDeleteRecord means delete record by id is failure
+	ErrDeleteRecord = newAPPError(http.StatusInternalServerError, 50032, "delete record by id is failure")
 )
 
 var (
