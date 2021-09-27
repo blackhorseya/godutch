@@ -5,6 +5,7 @@ import (
 	_ "github.com/blackhorseya/godutch/api/docs"
 	"github.com/blackhorseya/godutch/internal/app/godutch/api/activity"
 	"github.com/blackhorseya/godutch/internal/app/godutch/api/health"
+	"github.com/blackhorseya/godutch/internal/app/godutch/api/history"
 	"github.com/blackhorseya/godutch/internal/app/godutch/api/user"
 	userB "github.com/blackhorseya/godutch/internal/app/godutch/biz/user"
 	"github.com/blackhorseya/godutch/internal/pkg/infra/transports/http"
@@ -19,7 +20,8 @@ import (
 func CreateInitHandlerFn(userBiz userB.IBiz,
 	healthH health.IHandler,
 	userH user.IHandler,
-	actH activity.IHandler) http.InitHandlers {
+	actH activity.IHandler,
+	recordH history.IHandler) http.InitHandlers {
 	return func(r *gin.Engine) {
 		api := r.Group("api")
 		{
@@ -50,6 +52,14 @@ func CreateInitHandlerFn(userBiz userB.IBiz,
 					actG.POST("", actH.NewWithMembers)
 					actG.PATCH(":id/name", actH.ChangeName)
 					actG.DELETE(":id", actH.Delete)
+
+					recordG := actG.Group(":id/records")
+					{
+						recordG.GET(":record_id", recordH.GetByID)
+						recordG.GET("", recordH.List)
+						recordG.POST("", recordH.NewRecord)
+						recordG.DELETE(":record_id", recordH.Delete)
+					}
 				}
 			}
 		}
@@ -61,5 +71,6 @@ var ProviderSet = wire.NewSet(
 	health.ProviderSet,
 	user.ProviderSet,
 	activity.ProviderSet,
+	history.ProviderSet,
 	CreateInitHandlerFn,
 )
