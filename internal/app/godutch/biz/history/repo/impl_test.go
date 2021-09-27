@@ -23,15 +23,18 @@ var (
 
 	user1 = &user.Member{Id: userID1}
 
+	act1 = &event.Activity{ID: actID1}
+
 	record1 = &event.Record{
-		ID:      id1,
-		Payer:   user1,
-		Members: []*user.Member{user1},
+		ID:       id1,
+		Activity: act1,
+		Payer:    user1,
+		Members:  []*user.Member{user1},
 	}
 
 	record2 = &event.Record{
-		ID:      id1,
-		Payer:   user1,
+		ID:    id1,
+		Payer: user1,
 	}
 )
 
@@ -116,7 +119,14 @@ from spend_details detail
 					WillReturnRows(sqlmock.NewRows([]string{"id", "email", "name", "value"}).
 						AddRow(user1.Id, user1.Email, user1.Name, user1.Value))
 			}},
-			wantInfo: record1,
+			wantInfo: &event.Record{
+				ID:        id1,
+				Remark:    record1.Remark,
+				Payer:     user1,
+				Members:   []*user.Member{user1},
+				Total:     record1.Total,
+				CreatedAt: record1.CreatedAt,
+			},
 			wantErr:  false,
 		},
 	}
