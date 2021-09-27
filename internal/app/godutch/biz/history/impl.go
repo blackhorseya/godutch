@@ -39,8 +39,27 @@ func (i *impl) GetByID(ctx contextx.Contextx, id int64) (info *event.Record, err
 }
 
 func (i *impl) List(ctx contextx.Contextx, actID int64, page, size int) (infos []*event.Record, err error) {
-	// todo: 2021-09-26|20:20|Sean|impl me
-	panic("implement me")
+	if page <= 0 {
+		i.logger.Error(er.ErrInvalidPage.Error(), zap.Int("page", page))
+		return nil, er.ErrInvalidPage
+	}
+
+	if size <= 0 {
+		i.logger.Error(er.ErrInvalidSize.Error(), zap.Int("size", size))
+		return nil, er.ErrInvalidSize
+	}
+
+	ret, err := i.repo.List(ctx, actID, size, (page-1)*size)
+	if err != nil {
+		i.logger.Error(er.ErrListRecords.Error(), zap.Error(err), zap.Int64("act_id", actID), zap.Int("page", page), zap.Int("size", size))
+		return nil, er.ErrListRecords
+	}
+	if len(ret)  == 0 {
+		i.logger.Error(er.ErrRecordNotExists.Error(), zap.Int64("act_id", actID), zap.Int("page", page), zap.Int("size", size))
+		return nil, er.ErrRecordNotExists
+	}
+
+	return ret, nil
 }
 
 func (i *impl) NewRecord(ctx contextx.Contextx, created *event.Record) (info *event.Record, err error) {

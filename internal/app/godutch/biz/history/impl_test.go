@@ -110,3 +110,72 @@ func (s *bizSuite) Test_impl_GetByID() {
 		})
 	}
 }
+
+func (s *bizSuite) Test_impl_List() {
+	type args struct {
+		ctx   contextx.Contextx
+		actID int64
+		page  int
+		size  int
+		mock  func()
+	}
+	tests := []struct {
+		name      string
+		args      args
+		wantInfos []*event.Record
+		wantErr   bool
+	}{
+		{
+			name:      "0 10 then error",
+			args:      args{ctx: contextx.Background(), actID: id1, page: -1, size: 10},
+			wantInfos: nil,
+			wantErr:   true,
+		},
+		{
+			name:      "1 0 then error",
+			args:      args{ctx: contextx.Background(), actID: id1, page: 1, size: 0},
+			wantInfos: nil,
+			wantErr:   true,
+		},
+		{
+			name: "list then error",
+			args: args{ctx: contextx.Background(), actID: id1, page: 1, size: 10, mock: func() {
+				s.mock.On("List", mock.Anything, id1, 10, 0).Return(nil, errors.New("error")).Once()
+			}},
+			wantInfos: nil,
+			wantErr:   true,
+		},
+		{
+			name: "list then not found",
+			args: args{ctx: contextx.Background(), actID: id1, page: 1, size: 10, mock: func() {
+				s.mock.On("List", mock.Anything, id1, 10, 0).Return(nil, nil).Once()
+			}},
+			wantInfos: nil,
+			wantErr:   true,
+		},
+		{
+			name: "list then success",
+			args: args{ctx: contextx.Background(), actID: id1, page: 1, size: 10, mock: func() {
+				s.mock.On("List", mock.Anything, id1, 10, 0).Return([]*event.Record{record1}, nil).Once()
+			}},
+			wantInfos: []*event.Record{record1},
+			wantErr:   false,
+		},
+	}
+	for _, tt := range tests {
+		s.T().Run(tt.name, func(t *testing.T) {
+			if tt.args.mock != nil {
+				tt.args.mock()
+			}
+
+			gotInfos, err := s.biz.List(tt.args.ctx, tt.args.actID, tt.args.page, tt.args.size)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("List() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(gotInfos, tt.wantInfos) {
+				t.Errorf("List() gotInfos = %v, want %v", gotInfos, tt.wantInfos)
+			}
+		})
+	}
+}

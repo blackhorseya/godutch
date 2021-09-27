@@ -65,6 +65,9 @@ var (
 var (
 	// ErrGetRecordByID means Get spend record details is failure
 	ErrGetRecordByID = newAPPError(http.StatusInternalServerError, 50030, "Get spend record details is failure")
+
+	// ErrListRecords means list all records is failure
+	ErrListRecords = newAPPError(http.StatusInternalServerError, 50031, "list all records is failure")
 )
 
 var (
