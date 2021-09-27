@@ -362,6 +362,11 @@ func (s *bizSuite) Test_impl_Logout() {
 		wantErr bool
 	}{
 		{
+			name:    "missing user info in ctx then error",
+			args:    args{ctx: contextx.Background()},
+			wantErr: true,
+		},
+		{
 			name: "update token then error",
 			args: args{ctx: ctx1, mock: func() {
 				s.mock.On("UpdateToken", mock.Anything, info1).Return(nil, errors.New("error")).Once()
