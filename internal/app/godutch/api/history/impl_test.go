@@ -264,3 +264,62 @@ func (s *handlerSuite) Test_impl_NewRecord() {
 		})
 	}
 }
+
+func (s *handlerSuite) Test_impl_Delete() {
+	s.r.DELETE("/api/v1/activities/:id/records/:record_id", s.handler.Delete)
+
+	type args struct {
+		actID    int64
+		recordID int64
+		mock     func()
+	}
+	tests := []struct {
+		name     string
+		args     args
+		wantCode int
+	}{
+		{
+			name:     "missing act id then error",
+			args:     args{recordID: recordID1},
+			wantCode: 400,
+		},
+		{
+			name:     "missing record id then error",
+			args:     args{actID: actID1},
+			wantCode: 400,
+		},
+		{
+			name: "delete by id then error",
+			args: args{actID: actID1, recordID: recordID1, mock: func() {
+				s.mock.On("Delete", mock.Anything, recordID1, actID1).Return(er.ErrDeleteRecord).Once()
+			}},
+			wantCode: 500,
+		},
+		{
+			name: "delete by id then success",
+			args: args{actID: actID1, recordID: recordID1, mock: func() {
+				s.mock.On("Delete", mock.Anything, recordID1, actID1).Return(nil).Once()
+			}},
+			wantCode: 204,
+		},
+	}
+	for _, tt := range tests {
+		s.T().Run(tt.name, func(t *testing.T) {
+			if tt.args.mock != nil {
+				tt.args.mock()
+			}
+
+			uri := fmt.Sprintf("/api/v1/activities/%v/records/%v", tt.args.actID, tt.args.recordID)
+			req := httptest.NewRequest(http.MethodDelete, uri, nil)
+			w := httptest.NewRecorder()
+			s.r.ServeHTTP(w, req)
+
+			got := w.Result()
+			defer got.Body.Close()
+
+			s.EqualValuesf(tt.wantCode, got.StatusCode, "Delete() code = %v, wantCode = %v", got.StatusCode, tt.wantCode)
+
+			s.TearDownTest()
+		})
+	}
+}

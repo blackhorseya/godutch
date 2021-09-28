@@ -188,6 +188,21 @@ func (i *impl) NewRecord(c *gin.Context) {
 // @Failure 500 {object} er.APPError
 // @Router /v1/activities/{id}/records/{record_id} [delete]
 func (i *impl) Delete(c *gin.Context) {
-	// todo: 2021-09-27|20:42|Sean|impl me
-	panic("implement me")
+	ctx := c.MustGet("ctx").(contextx.Contextx)
+
+	var req reqRecordID
+	if err := c.ShouldBindUri(&req); err != nil {
+		i.logger.Error(er.ErrInvalidID.Error(), zap.Error(err))
+		_ = c.Error(er.ErrInvalidID)
+		return
+	}
+
+	err := i.biz.Delete(ctx, req.RecordID, req.ID)
+	if err != nil {
+		i.logger.Error(er.ErrDeleteRecord.Error(), zap.Error(err))
+		_ = c.Error(err)
+		return
+	}
+
+	c.Status(http.StatusNoContent)
 }
