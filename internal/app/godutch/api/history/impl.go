@@ -2,6 +2,7 @@ package history
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/blackhorseya/godutch/internal/app/godutch/biz/history"
 	"github.com/blackhorseya/godutch/internal/pkg/base/contextx"
@@ -63,6 +64,10 @@ func (i *impl) GetByID(c *gin.Context) {
 	c.JSON(http.StatusOK, response.OK.WithData(ret))
 }
 
+type reqID struct {
+	ID int64 `uri:"id" binding:"required"`
+}
+
 // List
 // @Summary List all records of activity
 // @Description List all records of activity
@@ -79,8 +84,37 @@ func (i *impl) GetByID(c *gin.Context) {
 // @Failure 500 {object} er.APPError
 // @Router /v1/activities/{id}/records [get]
 func (i *impl) List(c *gin.Context) {
-	// todo: 2021-09-27|20:42|Sean|impl me
-	panic("implement me")
+	ctx := c.MustGet("ctx").(contextx.Contextx)
+
+	var req reqID
+	if err := c.ShouldBindUri(&req); err != nil {
+		i.logger.Error(er.ErrInvalidID.Error(), zap.Error(err))
+		_ = c.Error(er.ErrInvalidID)
+		return
+	}
+
+	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
+	if err != nil {
+		i.logger.Error(er.ErrInvalidPage.Error(), zap.Error(err), zap.String("page", c.Query("page")))
+		_ = c.Error(er.ErrInvalidPage)
+		return
+	}
+
+	size, err := strconv.Atoi(c.DefaultQuery("size", "5"))
+	if err != nil {
+		i.logger.Error(er.ErrInvalidSize.Error(), zap.Error(err), zap.String("size", c.Query("size")))
+		_ = c.Error(er.ErrInvalidSize)
+		return
+	}
+
+	ret, err := i.biz.List(ctx, req.ID, page, size)
+	if err != nil {
+		i.logger.Error(er.ErrListRecords.Error(), zap.Error(err))
+		_ = c.Error(err)
+		return
+	}
+
+	c.JSON(http.StatusOK, response.OK.WithData(ret))
 }
 
 type member struct {

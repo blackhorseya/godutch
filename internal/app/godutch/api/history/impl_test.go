@@ -114,3 +114,68 @@ func (s *handlerSuite) Test_impl_GetByID() {
 		})
 	}
 }
+
+func (s *handlerSuite) Test_impl_List() {
+	s.r.GET("/api/v1/activities/:id/records", s.handler.List)
+
+	type args struct {
+		actID int64
+		page  string
+		size  string
+		mock  func()
+	}
+	tests := []struct {
+		name     string
+		args     args
+		wantCode int
+	}{
+		{
+			name:     "missing act id then error",
+			args:     args{page: "1", size: "10"},
+			wantCode: 400,
+		},
+		{
+			name:     "invalid page then error",
+			args:     args{actID: actID1, page: "a", size: "10"},
+			wantCode: 400,
+		},
+		{
+			name:     "invalid size then error",
+			args:     args{actID: actID1, page: "1", size: "b"},
+			wantCode: 400,
+		},
+		{
+			name: "list then error",
+			args: args{actID: actID1, page: "1", size: "10", mock: func() {
+				s.mock.On("List", mock.Anything, actID1, 1, 10).Return(nil, er.ErrListRecords).Once()
+			}},
+			wantCode: 500,
+		},
+		{
+			name: "list then success",
+			args: args{actID: actID1, page: "1", size: "10", mock: func() {
+				s.mock.On("List", mock.Anything, actID1, 1, 10).Return([]*event.Record{record1}, nil).Once()
+			}},
+			wantCode: 200,
+		},
+	}
+	for _, tt := range tests {
+		s.T().Run(tt.name, func(t *testing.T) {
+			if tt.args.mock != nil {
+				tt.args.mock()
+			}
+
+			uri := fmt.Sprintf("/api/v1/activities/%v/records?page=%v&size=%v", tt.args.actID, tt.args.page, tt.args.size)
+			req := httptest.NewRequest(http.MethodGet, uri, nil)
+			w := httptest.NewRecorder()
+			s.r.ServeHTTP(w, req)
+
+			got := w.Result()
+			defer got.Body.Close()
+
+			s.EqualValuesf(tt.wantCode, got.StatusCode, "List() code = %v, wantCode = %v", got.StatusCode, tt.wantCode)
+
+			s.TearDownTest()
+		})
+	}
+}
