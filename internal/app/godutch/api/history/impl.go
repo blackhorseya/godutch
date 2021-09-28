@@ -1,7 +1,12 @@
 package history
 
 import (
+	"net/http"
+
 	"github.com/blackhorseya/godutch/internal/app/godutch/biz/history"
+	"github.com/blackhorseya/godutch/internal/pkg/base/contextx"
+	"github.com/blackhorseya/godutch/internal/pkg/entity/er"
+	"github.com/blackhorseya/godutch/internal/pkg/entity/response"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
@@ -19,6 +24,11 @@ func NewImpl(logger *zap.Logger, biz history.IBiz) IHandler {
 	}
 }
 
+type reqRecordID struct {
+	ID       int64 `uri:"id" binding:"required"`
+	RecordID int64 `uri:"record_id" binding:"required"`
+}
+
 // GetByID
 // @Summary Get a spend record by id
 // @Description Get a spend record by id
@@ -34,8 +44,23 @@ func NewImpl(logger *zap.Logger, biz history.IBiz) IHandler {
 // @Failure 500 {object} er.APPError
 // @Router /v1/activities/{id}/records/{record_id} [get]
 func (i *impl) GetByID(c *gin.Context) {
-	// todo: 2021-09-27|20:42|Sean|impl me
-	panic("implement me")
+	ctx := c.MustGet("ctx").(contextx.Contextx)
+
+	var req reqRecordID
+	if err := c.ShouldBindUri(&req); err != nil {
+		i.logger.Error(er.ErrInvalidID.Error(), zap.Error(err))
+		_ = c.Error(er.ErrInvalidID)
+		return
+	}
+
+	ret, err := i.biz.GetByID(ctx, req.RecordID)
+	if err != nil {
+		i.logger.Error(er.ErrGetRecordByID.Error(), zap.Error(err))
+		_ = c.Error(err)
+		return
+	}
+
+	c.JSON(http.StatusOK, response.OK.WithData(ret))
 }
 
 // List
