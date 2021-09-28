@@ -8,6 +8,7 @@ import (
 	"github.com/blackhorseya/godutch/internal/pkg/base/contextx"
 	"github.com/blackhorseya/godutch/internal/pkg/entity/er"
 	"github.com/blackhorseya/godutch/internal/pkg/entity/response"
+	"github.com/blackhorseya/godutch/internal/pkg/entity/user"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
@@ -143,8 +144,34 @@ type reqNew struct {
 // @Failure 500 {object} er.APPError
 // @Router /v1/activities/{id}/records [post]
 func (i *impl) NewRecord(c *gin.Context) {
-	// todo: 2021-09-27|20:42|Sean|impl me
-	panic("implement me")
+	ctx := c.MustGet("ctx").(contextx.Contextx)
+
+	var req reqID
+	if err := c.ShouldBindUri(&req); err != nil {
+		i.logger.Error(er.ErrInvalidID.Error(), zap.Error(err))
+		_ = c.Error(er.ErrInvalidID)
+		return
+	}
+
+	var data *reqNew
+	if err := c.ShouldBindJSON(&data); err != nil {
+		i.logger.Error(er.ErrEmptyName.Error(), zap.Error(err))
+		_ = c.Error(er.ErrEmptyName)
+		return
+	}
+
+	var members []*user.Member
+	for _, m := range data.Members {
+		members = append(members, &user.Member{Id: m.ID, Value: int64(m.Value)})
+	}
+	ret, err := i.biz.NewRecord(ctx, req.ID, data.PayerID, data.Remark, members, data.Total)
+	if err != nil {
+		i.logger.Error(er.ErrNewRecord.Error(), zap.Error(err), zap.Any("payload", data))
+		_ = c.Error(err)
+		return
+	}
+
+	c.JSON(http.StatusCreated, response.OK.WithData(ret))
 }
 
 // Delete
