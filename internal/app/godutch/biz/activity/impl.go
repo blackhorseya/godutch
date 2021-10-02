@@ -106,16 +106,17 @@ func (i *impl) NewWithMembers(ctx contextx.Contextx, name string, emails []strin
 		return nil, er.ErrGetUserByEmail
 	}
 
+	for _, member := range members {
+		if member.Id == profile.ID {
+			member.Kind = user.Kind_OWNER
+		} else {
+			member.Kind = user.Kind_MEMBER
+		}
+	}
+
 	created := &event.Activity{
 		ID:      i.node.Generate().Int64() / 1000 * 1000,
 		Name:    name,
-		OwnerID: profile.ID,
-		Owner: &user.Profile{
-			ID:        profile.ID,
-			Email:     profile.Email,
-			Name:      profile.Name,
-			CreatedAt: profile.CreatedAt,
-		},
 		Members:   members,
 		CreatedAt: time.Now().Unix(),
 	}
@@ -129,15 +130,15 @@ func (i *impl) NewWithMembers(ctx contextx.Contextx, name string, emails []strin
 }
 
 func (i *impl) InviteMembers(ctx contextx.Contextx, id int64, emails []string) (info *event.Activity, err error) {
-	users, err := i.repo.GetByEmails(ctx, emails)
+	members, err := i.repo.GetByEmails(ctx, emails)
 	if err != nil {
 		i.logger.Error(er.ErrGetUserByEmail.Error(), zap.Error(err), zap.Strings("emails", emails))
 		return nil, er.ErrGetUserByEmail
 	}
 
-	ret, err := i.repo.AddMembers(ctx, id, users)
+	ret, err := i.repo.AddMembers(ctx, id, members)
 	if err != nil {
-		i.logger.Error(er.ErrInviteMembers.Error(), zap.Error(err), zap.Any("users", users))
+		i.logger.Error(er.ErrInviteMembers.Error(), zap.Error(err), zap.Any("members", members))
 		return nil, er.ErrInviteMembers
 	}
 

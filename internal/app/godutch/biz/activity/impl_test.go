@@ -23,13 +23,13 @@ var (
 
 	user1 = &user.Profile{ID: userID1}
 
+	member1 = &user.Member{Id: id1}
+
 	ctx1 = contextx.WithValue(contextx.Background(), "user", user1)
 
 	act1 = &event.Activity{
-		ID:      id1,
-		Name:    "test",
-		OwnerID: userID1,
-		Owner:   user1,
+		ID:   id1,
+		Name: "test",
 	}
 )
 
@@ -397,7 +397,7 @@ func (s *bizSuite) Test_impl_NewWithMembers() {
 		{
 			name: "new an act then error",
 			args: args{name: "test", email: []string{"test"}, ctx: ctx1, mock: func() {
-				s.mock.On("GetByEmails", mock.Anything, []string{"test"}).Return([]*user.Profile{user1}, nil).Once()
+				s.mock.On("GetByEmails", mock.Anything, []string{"test"}).Return([]*user.Member{member1}, nil).Once()
 				s.mock.On("Create", mock.Anything, mock.Anything).Return(nil, errors.New("error")).Once()
 			}},
 			wantInfo: nil,
@@ -406,7 +406,7 @@ func (s *bizSuite) Test_impl_NewWithMembers() {
 		{
 			name: "new an act then success",
 			args: args{name: "test", email: []string{"test"}, ctx: ctx1, mock: func() {
-				s.mock.On("GetByEmails", mock.Anything, []string{"test"}).Return([]*user.Profile{user1}, nil).Once()
+				s.mock.On("GetByEmails", mock.Anything, []string{"test"}).Return([]*user.Member{member1}, nil).Once()
 				s.mock.On("Create", mock.Anything, mock.Anything).Return(act1, nil).Once()
 			}},
 			wantInfo: act1,
@@ -457,8 +457,8 @@ func (s *bizSuite) Test_impl_InviteMembers() {
 		{
 			name: "invite members then error",
 			args: args{id: id1, emails: []string{"test"}, ctx: ctx1, mock: func() {
-				s.mock.On("GetByEmails", mock.Anything, []string{"test"}).Return([]*user.Profile{user1}, nil).Once()
-				s.mock.On("AddMembers", mock.Anything, id1, []*user.Profile{user1}).Return(nil, errors.New("error")).Once()
+				s.mock.On("GetByEmails", mock.Anything, []string{"test"}).Return([]*user.Member{member1}, nil).Once()
+				s.mock.On("AddMembers", mock.Anything, id1, []*user.Member{member1}).Return(nil, errors.New("error")).Once()
 			}},
 			wantInfo: nil,
 			wantErr:  true,
@@ -466,8 +466,8 @@ func (s *bizSuite) Test_impl_InviteMembers() {
 		{
 			name: "invite members then success",
 			args: args{id: id1, emails: []string{"test"}, ctx: ctx1, mock: func() {
-				s.mock.On("GetByEmails", mock.Anything, []string{"test"}).Return([]*user.Profile{user1}, nil).Once()
-				s.mock.On("AddMembers", mock.Anything, id1, []*user.Profile{user1}).Return(act1, nil).Once()
+				s.mock.On("GetByEmails", mock.Anything, []string{"test"}).Return([]*user.Member{member1}, nil).Once()
+				s.mock.On("AddMembers", mock.Anything, id1, []*user.Member{member1}).Return(act1, nil).Once()
 			}},
 			wantInfo: act1,
 			wantErr:  false,

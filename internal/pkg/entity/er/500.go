@@ -63,6 +63,20 @@ var (
 )
 
 var (
+	// ErrGetRecordByID means Get spend record details is failure
+	ErrGetRecordByID = newAPPError(http.StatusInternalServerError, 50030, "Get spend record details is failure")
+
+	// ErrListRecords means list all records is failure
+	ErrListRecords = newAPPError(http.StatusInternalServerError, 50031, "list all records is failure")
+
+	// ErrDeleteRecord means delete record by id is failure
+	ErrDeleteRecord = newAPPError(http.StatusInternalServerError, 50032, "delete record by id is failure")
+
+	// ErrNewRecord means create a new record is failure
+	ErrNewRecord = newAPPError(http.StatusInternalServerError, 50033, "create a new record is failure")
+)
+
+var (
 	// ErrDBConnect means db connect is failure
 	ErrDBConnect = newAPPError(http.StatusInternalServerError, 50001, "db connect is failure")
 

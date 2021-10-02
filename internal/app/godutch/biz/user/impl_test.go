@@ -154,6 +154,14 @@ func (s *bizSuite) Test_impl_GetByToken() {
 			wantErr:  true,
 		},
 		{
+			name: "get by token but token not equal then error",
+			args: args{token: token1, mock: func() {
+				s.mock.On("GetByID", mock.Anything, id1).Return(&user.Profile{ID: id1, Token: "test"}, nil).Once()
+			}},
+			wantInfo: nil,
+			wantErr:  true,
+		},
+		{
 			name: "get by token then user",
 			args: args{token: token1, mock: func() {
 				s.mock.On("GetByID", mock.Anything, id1).Return(info1, nil).Once()
@@ -361,6 +369,11 @@ func (s *bizSuite) Test_impl_Logout() {
 		args    args
 		wantErr bool
 	}{
+		{
+			name:    "missing user info in ctx then error",
+			args:    args{ctx: contextx.Background()},
+			wantErr: true,
+		},
 		{
 			name: "update token then error",
 			args: args{ctx: ctx1, mock: func() {

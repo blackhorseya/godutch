@@ -17,11 +17,11 @@ type IRepo struct {
 }
 
 // AddMembers provides a mock function with given fields: ctx, id, newUsers
-func (_m *IRepo) AddMembers(ctx contextx.Contextx, id int64, newUsers []*user.Profile) (*event.Activity, error) {
+func (_m *IRepo) AddMembers(ctx contextx.Contextx, id int64, newUsers []*user.Member) (*event.Activity, error) {
 	ret := _m.Called(ctx, id, newUsers)
 
 	var r0 *event.Activity
-	if rf, ok := ret.Get(0).(func(contextx.Contextx, int64, []*user.Profile) *event.Activity); ok {
+	if rf, ok := ret.Get(0).(func(contextx.Contextx, int64, []*user.Member) *event.Activity); ok {
 		r0 = rf(ctx, id, newUsers)
 	} else {
 		if ret.Get(0) != nil {
@@ -30,7 +30,7 @@ func (_m *IRepo) AddMembers(ctx contextx.Contextx, id int64, newUsers []*user.Pr
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(contextx.Contextx, int64, []*user.Profile) error); ok {
+	if rf, ok := ret.Get(1).(func(contextx.Contextx, int64, []*user.Member) error); ok {
 		r1 = rf(ctx, id, newUsers)
 	} else {
 		r1 = ret.Error(1)
@@ -98,15 +98,15 @@ func (_m *IRepo) Delete(ctx contextx.Contextx, id int64, userID int64) error {
 }
 
 // GetByEmails provides a mock function with given fields: ctx, emails
-func (_m *IRepo) GetByEmails(ctx contextx.Contextx, emails []string) ([]*user.Profile, error) {
+func (_m *IRepo) GetByEmails(ctx contextx.Contextx, emails []string) ([]*user.Member, error) {
 	ret := _m.Called(ctx, emails)
 
-	var r0 []*user.Profile
-	if rf, ok := ret.Get(0).(func(contextx.Contextx, []string) []*user.Profile); ok {
+	var r0 []*user.Member
+	if rf, ok := ret.Get(0).(func(contextx.Contextx, []string) []*user.Member); ok {
 		r0 = rf(ctx, emails)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*user.Profile)
+			r0 = ret.Get(0).([]*user.Member)
 		}
 	}
 

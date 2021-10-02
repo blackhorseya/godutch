@@ -1,4 +1,4 @@
-# godutch
+# Godutch
 
 [![Build](https://github.com/blackhorseya/godutch/actions/workflows/build.yml/badge.svg)](https://github.com/blackhorseya/godutch/actions/workflows/build.yml)
 [![codecov](https://codecov.io/gh/blackhorseya/godutch/branch/main/graph/badge.svg?token=DJHL70E6ZT)](https://codecov.io/gh/blackhorseya/godutch)
