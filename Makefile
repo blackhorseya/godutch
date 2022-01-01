@@ -1,10 +1,16 @@
-APP_NAME = godutch
-VERSION = latest
-PROJECT_ID = sean-side
-NS = side
-DEPLOY_TO = uat
+APP_NAME=godutch
+VERSION=latest
+PROJECT_ID=sean-side
+NS=side
+DEPLOY_TO=uat
+REGISTRY=gcr.io
+IMAGE_NAME=$(REGISTRY)/$(PROJECT_ID)/$(APP_NAME)
+HELM_REPO_NAME=blackhorseya
+CHART_NAME=godutch
 
 DB_URI = "mysql://godutch:changeme@tcp(localhost:3308)/godutch?charset=utf8mb4&parseTime=True&loc=Local"
+
+check_defined = $(if $(value $1),,$(error Undefined $1))
 
 .PHONY: help # Generate list of targets with descriptions
 help:
@@ -28,11 +34,12 @@ test-unit:
 
 .PHONY: build-image # build docker image with APP_NAME and VERSION
 build-image:
-	@docker build -t $(APP_NAME):$(VERSION) \
+	$(call check_defined,VERSION)
+	@docker build -t $(IMAGE_NAME):$(VERSION) \
 	--label "app.name=$(APP_NAME)" \
 	--label "app.version=$(VERSION)" \
 	--build-arg APP_NAME=$(APP_NAME) \
-	--pull \
+	--pull --cache-from=$(IMAGE_NAME) \
 	-f Dockerfile .
 
 .PHONY: list-images # list all images with APP_NAME
@@ -43,28 +50,23 @@ list-images:
 prune-images:
 	@docker rmi -f `docker images --filter=label=app.name=$(APP_NAME) -q`
 
-.PHONY: tag-image # tag image with gcr.io
-tag-image:
-	@docker tag $(APP_NAME):$(VERSION) gcr.io/$(PROJECT_ID)/$(APP_NAME):$(VERSION)
-
-.PHONY: push-image # push image to gcr.io
 push-image:
-	@docker push gcr.io/$(PROJECT_ID)/$(APP_NAME):$(VERSION)
-
-.PHONY: install-db # install database with APP_NAME and DEPLOY_TO
-install-db:
-	@helm --namespace $(NS) upgrade --install $(APP_NAME)-db bitnami/mariadb \
-	--values ./deployments/configs/$(DEPLOY_TO)/db.yaml
+	$(call check_defined,VERSION)
+	@docker tag $(IMAGE_NAME):$(VERSION) $(IMAGE_NAME):latest
+	@docker push $(IMAGE_NAME):$(VERSION)
+	@docker push $(IMAGE_NAME):latest
 
 .PHONY: deploy # deploy application with DEPLOY_TO and VERSION
 deploy:
+	$(call check_defined,VERSION)
+	$(call check_defined,DEPLOY_TO)
 	@helm --namespace $(NS) \
-	upgrade --install $(APP_NAME) ./deployments/$(APP_NAME) \
+	upgrade --install $(APP_NAME) $(HELM_REPO_NAME)/$(CHART_NAME) \
 	--values ./deployments/configs/$(DEPLOY_TO)/$(APP_NAME).yaml \
 	--set image.tag=$(VERSION)
 
 .PHONY: gen # generate all generate commands
-gen: gen-wire gen-pb gen-swagger
+gen: gen-wire gen-swagger
 
 .PHONY: gen-wire # generate wire code
 gen-wire:
@@ -72,7 +74,8 @@ gen-wire:
 
 .PHONY: gen-pb # generate protobuf messages and services
 gen-pb:
-	@protoc --go_out=plugins=grpc,paths=source_relative:. ./internal/pkg/entity/**/*.proto
+	@protoc --go_out=paths=source_relative:. --go-grpc_out=paths=source_relative:. ./pb/*.proto
+	@echo Successfully generated proto
 
 .PHONY: gen-swagger # generate swagger spec
 gen-swagger:
